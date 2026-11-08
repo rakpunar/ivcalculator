@@ -105,8 +105,8 @@ function renderModal(m){
   root.querySelector('#baseBody').innerHTML = m.base
     ? baseTableRows(m) : '<tr><td colspan="2" class="na">çekiliyor…</td></tr>';
 
-  // Hamleler
-  root.querySelector('#moves').innerHTML = moveChips(m);
+  // Hamleler (tablo)
+  root.querySelector('#movesBody').innerHTML = moveRows(m);
 
   // Alt orta blok: ability + nature adı/açıklaması (hamleler ve base statların altında, ortalanmış)
   root.querySelector('.fAbility').innerHTML =
@@ -119,9 +119,9 @@ function renderModal(m){
   modal.querySelector('.close').addEventListener('click', closeModal);
 
   // Hamle tooltip'leri
-  modal.querySelectorAll('.movechip').forEach(chip => {
-    chip.addEventListener('mouseenter', e => showMoveTip(e, chip.dataset.move, m));
-    chip.addEventListener('mouseleave', hideTip);
+  modal.querySelectorAll('.movelink').forEach(el => {
+    el.addEventListener('mouseenter', e => showMoveTip(e, el.dataset.move, m));
+    el.addEventListener('mouseleave', hideTip);
   });
 
   // eksik veriyi arka planda çek, gelince tekrar çiz
@@ -168,17 +168,25 @@ function baseTableRows(m){
   }).join('');
 }
 
-function moveChips(m){
-  if(!m.moves.length) return '<div class="eff">—</div>';
+function moveRows(m){
   const metas = m.moveMeta || {};
-  return `<div class="moves">${m.moves.map(mv=>{
+  if(!m.moves.length) return '<tr><td colspan="6" class="na">henüz hamle yok</td></tr>';
+  return m.moves.map(mv=>{
     const mt = metas[mv];
-    const ty  = mt ? `<span class="type-icon t-${mt.type}">${mt.type.toUpperCase()}</span>` : '';
-    const cat = mt && CAT_ICON[mt.cat]
-      ? `<img class="caticon" src="${CAT_ICON[mt.cat].icon}" width="27" height="18" alt="${CAT_ICON[mt.cat].label}" title="${CAT_ICON[mt.cat].label}">`
-      : (mt ? '' : '<span class="na">…</span>');
-    return `<span class="movechip" data-move="${esc(mv)}">${ty}${cat}<span>${esc(mv)}</span></span>`;
-  }).join('')}</div>`;
+    const tdType = mt ? `<td class="c-type"><span class="type-icon t-${mt.type}">${mt.type.toUpperCase()}</span></td>` : '<td class="c-type na">…</td>';
+    const tdCat = mt && CAT_ICON[mt.cat]
+      ? `<td class="c-cat"><img class="caticon" src="${CAT_ICON[mt.cat].icon}" width="27" height="18" alt="${CAT_ICON[mt.cat].label}" title="${CAT_ICON[mt.cat].label}"></td>`
+      : '<td class="c-cat na">…</td>';
+    const vals = mt ? [mt.power ?? '—', (mt.accuracy ?? '—') + '%', mt.pp ?? '—']
+                    : ['…','…','…'];
+    return `<tr>
+      ${tdType}${tdCat}
+      <td class="c-name"><span class="movelink" data-move="${esc(mv)}">${esc(mv)}</span></td>
+      <td class="v100">${vals[0]}</td>
+      <td class="v100">${vals[1]}</td>
+      <td class="v100">${vals[2]}</td>
+    </tr>`;
+  }).join('');
 }
 
 /* modal verisi yoksa arka planda tek seferlik çek (promise-cache → çift fetch yok) */

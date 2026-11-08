@@ -37,8 +37,9 @@ button{cursor:pointer;border:none;border-radius:9px;font-weight:600;font-size:.9
 .card img{width:88px;height:88px;object-fit:contain;image-rendering:pixelated}
 .card .name{font-weight:700;margin-top:4px;text-transform:capitalize}
 .card .lvl{color:var(--muted);font-size:.78rem;margin-top:2px}
-.card .del{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;
-  background:rgba(0,0,0,.45);color:#ff9b9b;font-size:.8rem;line-height:1;display:none;opacity:.85}
+.card .del{position:absolute;top:6px;right:6px;width:24px;height:24px;padding:0;border:none;border-radius:50%;
+  background:rgba(0,0,0,.45);color:#ff9b9b;font-size:.78rem;font-weight:400;line-height:24px;text-align:center;
+  display:none;opacity:.85;cursor:pointer;transition:.15s}
 .card:hover .del{display:block}
 .card .del:hover{background:#c04040;color:#fff}
 .tiny-rows{margin-top:8px;display:flex;flex-direction:column;gap:4px;font-size:.78rem;text-align:left}
@@ -62,8 +63,6 @@ button{cursor:pointer;border:none;border-radius:9px;font-weight:600;font-size:.9
 .t-flying{background-color:#89f}.t-psychic{background-color:#f59}.t-bug{background-color:#ab2}
 .t-rock{background-color:#ba6}.t-ghost{background-color:#66b}.t-dragon{background-color:#76e}
 .t-dark{background-color:#754}.t-steel{background-color:#aab}.t-fairy{background-color:#e9e}
-.m-head .types{margin-top:6px}
-.m-head .type-icon{font-size:.85rem;width:88px;line-height:1.7}
 /* Modal alt bloğu: tabloların altında ortalanmış ability/nature */
 .m-footer{grid-column:1 / -1;text-align:center;color:#cdd8e6;padding-top:10px;
   border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:6px}
@@ -118,10 +117,14 @@ button{cursor:pointer;border:none;border-radius:9px;font-weight:600;font-size:.9
 .statbox .arrow-alert{color:var(--hp)} .statbox .arrow-down{color:var(--atk)}
 .eff{background:rgba(0,0,0,.28);border-radius:10px;padding:12px 14px;font-size:1rem;line-height:1.55;color:#cdd8e6}
 .abl{color:#b1e6ff;font-weight:700}
-.moves{display:flex;flex-wrap:wrap;gap:8px;padding:4px 0}
-.movechip{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.09);
-  border:1px solid rgba(255,255,255,.16);border-radius:9px;padding:7px 11px;font-size:.92rem;font-weight:700}
-.movechip .type-icon{width:60px;font-size:.64rem;line-height:1.5}
+/* Hamle tablosu */
+.movetable th{vertical-align:middle}
+.movetable td{vertical-align:middle;padding:8px 6px}
+.movetable .c-type{text-align:center}
+.movetable .c-cat{text-align:center;width:56px}
+.movetable .c-name{text-align:left;font-size:1rem}
+.movelink{cursor:help;border-bottom:1px dotted var(--muted)}
+.movelink:hover{color:var(--accent2)}
 @media(max-width:900px){
   .modal{grid-template-columns:1fr;overflow-y:auto}
 }
