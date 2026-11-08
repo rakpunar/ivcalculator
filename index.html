@@ -66,57 +66,65 @@ button:disabled{opacity:.45;cursor:not-allowed}
   font-size:.8rem;border-radius:8px;padding:3px 10px}
 .ivbadge small{font-weight:500;opacity:.8}
 
-/* Modal */
+/* Modal — yatay kart */
 .overlay{position:fixed;inset:0;background:rgba(5,8,14,.75);backdrop-filter:blur(3px);
-  display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+  display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
 .overlay.open{display:flex}
 .modal{background:linear-gradient(160deg,#2a3549,var(--panel));border:1px solid var(--border);
-  border-radius:18px;max-width:460px;width:100%;padding:24px;position:relative;
-  max-height:90vh;overflow-y:auto}
+  border-radius:18px;max-width:1080px;width:100%;padding:26px 28px;position:relative;
+  display:grid;grid-template-columns:300px 1fr;gap:26px;align-items:start;
+  font-size:1.08rem;max-height:94vh;overflow-y:auto}
 .modal .close{position:absolute;top:12px;right:12px;background:var(--panel2);color:var(--text);
-  width:32px;height:32px;padding:0}
+  width:34px;height:34px;padding:0;z-index:2}
 .modal .close:hover{background:#c04040}
-.m-head{text-align:center;margin-bottom:6px}
-.m-head img{width:130px;height:130px;object-fit:contain;image-rendering:pixelated}
-.m-head .name{font-size:1.5rem;font-weight:800;text-transform:capitalize}
-.m-head .lvl{color:var(--accent);font-weight:700;margin-bottom:10px}
-.m-total{text-align:center;margin:12px 0 18px}
-.m-total .big{font-size:1.7rem;font-weight:800;color:var(--accent)}
-.m-total .lbl{font-size:.75rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
-.m-total .bar{height:8px;background:#0d1117;border-radius:5px;margin-top:6px;overflow:hidden}
+.m-left{text-align:center}
+.m-head{margin-bottom:6px}
+.m-head img{width:170px;height:170px;object-fit:contain;image-rendering:pixelated}
+.m-head .name{font-size:1.9rem;font-weight:800;text-transform:capitalize}
+.m-head .lvl{color:var(--accent);font-weight:700;margin-bottom:10px;font-size:1.15rem}
+.m-total{margin:10px 0 16px}
+.m-total .big{font-size:2rem;font-weight:800;color:var(--accent)}
+.m-total .lbl{font-size:.8rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+.m-total .bar{height:9px;background:#0d1117;border-radius:5px;margin-top:6px;overflow:hidden}
 .m-total .bar>div{height:100%;background:linear-gradient(90deg,#c9903a,var(--accent));border-radius:5px}
-.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
-.info-box{background:rgba(0,0,0,.28);border-radius:10px;padding:10px}
-.info-box .k{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
-.info-box .v{font-weight:700;margin-top:2px}
-.sec{font-size:.72rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin:14px 0 6px}
+.info-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:14px}
+.info-box{background:rgba(0,0,0,.28);border-radius:10px;padding:11px 13px;text-align:left}
+.info-box .k{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.info-box .v{font-weight:700;margin-top:2px;font-size:1.08rem}
+.sec{font-size:.82rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin:16px 0 8px}
 /* Showdown tarzı stat kutusu */
-.statbox{background:#0d1117;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-weight:700}
-.statbox table{width:100%;border-collapse:collapse;font-size:.85rem}
-.statbox th{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;text-align:right;padding:0 4px 6px;font-weight:600}
+.statbox{background:#0d1117;border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-weight:700}
+.statbox table{width:100%;border-collapse:collapse;font-size:1.05rem}
+.statbox th{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;text-align:right;padding:0 6px 8px;font-weight:600}
 .statbox th:first-child{text-align:left}
-.statbox td{padding:5px 4px;text-align:right;border-top:1px solid rgba(255,255,255,.06)}
+.statbox td{padding:7px 6px;text-align:right;border-top:1px solid rgba(255,255,255,.06)}
 .statbox td:first-child{text-align:left}
-.statbox .v100{color:#fff;min-width:52px}
+.statbox .v100{color:#fff;min-width:60px}
 .statbox .iv{color:var(--accent)}
 .statbox .ev{color:#9fb3c8;font-weight:600}
 .statbox .na{color:var(--muted);font-weight:400}
 .statbox .arrow-alert{color:var(--hp)} .statbox .arrow-down{color:var(--atk)}
-.statbar{display:grid;grid-template-columns:38px 1fr 40px;align-items:center;gap:8px;margin:5px 0;font-size:.78rem;font-weight:600}
-.statbar .track{height:9px;background:#0d1117;border-radius:5px;overflow:hidden}
+.statbar{display:grid;grid-template-columns:64px 1fr 44px;align-items:center;gap:10px;margin:7px 0;font-size:.92rem;font-weight:600}
+.statbar .track{height:10px;background:#1a2230;border-radius:5px;overflow:hidden}
 .statbar .fill{height:100%;border-radius:5px;transition:width .4s}
-.eff{background:rgba(0,0,0,.28);border-radius:10px;padding:10px;font-size:.8rem;line-height:1.5;color:#cdd8e6}
+.eff{background:rgba(0,0,0,.28);border-radius:10px;padding:12px 14px;font-size:1rem;line-height:1.55;color:#cdd8e6}
 .abl{color:#b1e6ff;font-weight:700}
+/* move rozetleri */
+.moves{display:flex;flex-wrap:wrap;gap:8px}
+.movechip{display:inline-flex;align-items:center;gap:7px;background:rgba(0,0,0,.28);
+  border-radius:9px;padding:6px 10px;font-size:.95rem;font-weight:700}
+.movechip .ty{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;
+  color:#fff;background:#666;border-radius:6px;padding:2px 8px}
+.movechip .cat{font-size:.78rem;opacity:.9}
 .skel{animation:pulse 1.2s infinite ease-in-out}
 @keyframes pulse{50%{opacity:.4}}
 .loading .name::after{content:"…"}
-footer{text-align:center;color:var(--muted);font-size:.7rem;margin-top:26px}
+@media(max-width:900px){
+  .modal{grid-template-columns:1fr;overflow-y:auto}
+}
 </style>
 </head>
 <body>
-
-<h1><img src="https://img.pokemondb.net/sprites/items/master-ball.png" alt="torba">Pokémon Envanteri</h1>
-<p class="sub">Showdown formatında yazılmış Pokémon bilgilerini pokemondb.net üzerinden canlı çeker.</p>
 
 <div class="layout">
   <!-- SOL: form -->
@@ -126,11 +134,6 @@ footer{text-align:center;color:var(--muted);font-size:.7rem;margin-top:26px}
     <button class="btn-add" id="btnAdd">＋ Envantere Ekle</button>
     <div class="msg" id="msg"></div>
     <div class="status" id="status"></div>
-    <p class="hint">
-      • Görsel, ability açıklaması ve nature açıklaması <b>pokemondb.net</b>'den canlı çekilir.<br>
-      • Ability ve açıklama tooltip'te görünür.<br>
-      • Toplam IV = 6 stat IV toplamı (max 186).
-    </p>
   </div>
 
   <!-- SAĞ: envanter -->
@@ -151,8 +154,6 @@ footer{text-align:center;color:var(--muted);font-size:.7rem;margin-top:26px}
 <div class="overlay" id="overlay">
   <div class="modal" id="modal"></div>
 </div>
-
-<footer>Veri kaynağı: pokemondb.net · IV/EV hesaplamaları yapıştırılan metinden yapılır</footer>
 
 <script>
 const PROXY = u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u);
@@ -358,7 +359,8 @@ async function processQueue(){
       updateQueueStatus(); render(); updateOpenModal(mon);
       continue;
     }
-    // Base stat geldiyse Lv.100 stat hesabını yap
+    // Base stat geldiyse Lv.100 stat hesabını yap + hamle rozetlerini getir
+    await loadMoveMeta(mon);
     try { mon.calc = await calcMon(mon); } catch(e){}
     mon.loading = false;
     showMsg('ok', `✔ ${name}: stat verileri güncellendi.`);
@@ -392,7 +394,7 @@ function saveInventory(){
     const data = mons.map(m=>({
       name:m.name, level:m.level, ability:m.ability, nature:m.nature,
       evs:m.evs, ivs:m.ivs, moves:m.moves, tera:m.tera ?? null,
-      sprite:m.sprite, art:m.art
+      sprite:m.sprite, art:m.art, moveMeta:m.moveMeta ?? null
     }));
     localStorage.setItem(LS_KEY, JSON.stringify(data));
   }catch(e){ /* quota vb. sessizce geç */ }
@@ -515,8 +517,31 @@ async function baseStats(name){
   return basePending[slug];
 }
 
-// Lv.100 actual stat (Gen 3+ formülü, nature modifikasyonu dahil — Showdown'ın kullandığı hesap)
-async function calcMon(m){
+// Hamle meta (tür + fiziksel/özel/status) — PokéAPI /move
+const moveMetaCache = {};
+const moveMetaPending = {};
+async function moveMeta(name){
+  const slug = slugify(name);
+  if(moveMetaCache[slug]) return moveMetaCache[slug];
+  if(moveMetaPending[slug]) return moveMetaPending[slug];
+  moveMetaPending[slug] = (async () => {
+    const j = await fetchJSON('https://pokeapi.co/api/v2/move/'+slug);
+    moveMetaCache[slug] = { type: j.type.name, cat: j.damage_class.name };
+    delete moveMetaPending[slug];
+    return moveMetaCache[slug];
+  })();
+  moveMetaPending[slug].catch(()=>{ delete moveMetaPending[slug]; });
+  return moveMetaPending[slug];
+}
+async function loadMoveMeta(m){
+  if(m.moveMeta || !m.moves?.length) return;
+  try{
+    const metas = await Promise.all(m.moves.map(x=>moveMeta(x)));
+    m.moveMeta = Object.fromEntries(m.moves.map((x,i)=>[x, metas[i]]));
+  }catch(e){ /* bazı hamleler bulunamayabilir; rozetler boş kalır */ }
+}
+
+// Lv.100 actual stat (Gen 3+ formülü, nature modifikasyonu dahil — Showdown'ın kullandığı hesap)async function calcMon(m){
   let ni = null;
   try{ ni = await natureInfo(m.nature); }catch(e){}
   if(!m.base) return null;
@@ -546,6 +571,27 @@ function openModal(m){
 }
 function closeModal(){ overlay.classList.remove('open'); modalMon = null; }
 
+const TYPE_COLORS = {normal:'#A8A77A',fire:'#EE8130',water:'#6390F0',electric:'#F7D02C',
+  grass:'#7AC74C',ice:'#96D9D6',fighting:'#C22E28',poison:'#A33EA1',ground:'#E2BF65',
+  flying:'#A98FF3',psychic:'#F95587',bug:'#A6B91A',rock:'#B6A136',ghost:'#735797',
+  dragon:'#6F35FC',dark:'#705746',steel:'#B7B7CE',fairy:'#D685AD'};
+const CAT_INFO = {physical:{icon:'⚔',label:'ATK',color:'#e05a5a'},
+  special:{icon:'✨',label:'SP',color:'#6a86e0'},
+  status:{icon:'🌀',label:'—',color:'#8fa0b8'}};
+
+function moveChips(m){
+  if(!m.moves.length) return '<div class="eff">—</div>';
+  const metas = m.moveMeta || {};
+  return `<div class="moves">${m.moves.map(mv=>{
+    const mt = metas[mv];
+    const ty = mt ? `<span class="ty" style="background:${TYPE_COLORS[mt.type]||'#666'}">${mt.type}</span>` : '';
+    const cat = mt && CAT_INFO[mt.cat]
+      ? `<span class="cat" style="color:${CAT_INFO[mt.cat].color}">${CAT_INFO[mt.cat].icon} ${CAT_INFO[mt.cat].label}</span>`
+      : (mt ? '' : '<span class="na">…</span>');
+    return `<span class="movechip">${ty}${cat}<span>${mv}</span></span>`;
+  }).join('')}</div>`;
+}
+
 function renderModal(m){
   const tv = totalIV(m.ivs);
   const asc = m.natureInfo ? STAT_API_TO_KEY[m.natureInfo.inc] : null;
@@ -553,78 +599,83 @@ function renderModal(m){
   const arrow = k => asc===k ? ' <span class="arrow-alert" title="Nature artış">▲</span>'
                : dsc===k ? ' <span class="arrow-down" title="Nature azalış">▼</span>' : '';
   const v100 = k => (m.calc && m.calc[k] != null) ? m.calc[k] : '<span class="na">…</span>';
-  overlay.classList.add('open');
   const modal = document.getElementById('modal');
   modal.innerHTML = `
     <button class="close" onclick="closeModal()">✕</button>
-    <div class="m-head">
-      <img src="${m.art}" onerror="this.onerror=null;this.src='${m.sprite}'">
-      <div class="name">${m.name}</div>
-      <div class="lvl">Lv. ${m.level ?? '?'} ${m.types?`· ${m.types.join(' / ')}`:''}</div>
+    <div class="m-left">
+      <div class="m-head">
+        <img src="${m.art}" onerror="this.onerror=null;this.src='${m.sprite}'">
+        <div class="name">${m.name}</div>
+        <div class="lvl">Lv. ${m.level ?? '?'}${m.types?` · <span style="text-transform:capitalize">${m.types.join(' / ')}</span>`:''}</div>
+      </div>
+
+      <div class="m-total">
+        <div class="lbl">Toplam IV ${tv} / 186</div>
+        <div class="big">${tv}</div>
+        <div class="bar"><div style="width:${(tv/186*100).toFixed(1)}%"></div></div>
+      </div>
+
+      ${m.tera?`<div style="margin-bottom:12px">Tera: <b>${m.tera}</b></div>`:''}
+
+      <div class="info-grid">
+        <div class="info-box"><div class="k">Ability</div><div class="v abl">${m.ability}</div></div>
+        <div class="info-box"><div class="k">Nature</div><div class="v">${m.nature}</div></div>
+      </div>
+
+      <div class="eff" style="text-align:left"><b>Ability:</b> ${m.abDesc!=null?`<span class="abl">${m.ability}:</span> ${m.abDesc}`:'yükleniyor…'}</div>
+      <div style="height:8px"></div>
+      <div class="eff" style="text-align:left"><b>Nature:</b> ${m.natDesc!=null?`${m.nature} — ${m.natDesc}`:'yükleniyor…'}</div>
+
+      <div class="sec">Hamleler</div>
+      ${moveChips(m)}
     </div>
 
-    <div class="m-total">
-      <div class="lbl">Toplam IV ${tv} / 186</div>
-      <div class="big">${tv}</div>
-      <div class="bar"><div style="width:${(tv/186*100).toFixed(1)}%"></div></div>
-    </div>
+    <div class="m-right">
+      <div class="sec">Stat Dağılımı — Lv.100 · IV · EV</div>
+      <div class="statbox">
+        <table>
+          <tr><th>Stat</th><th>Lv.100</th><th>IV</th><th>EV</th></tr>
+          ${STAT_ORDER.map(s=>`
+          <tr>
+            <td style="color:${STAT_COLORS[s.key]}">${s.label}${arrow(s.key)}</td>
+            <td class="v100">${v100(s.key)}</td>
+            <td class="iv">${stat(m.ivs,s.key)}</td>
+            <td class="ev">${stat(m.evs,s.key)}</td>
+          </tr>`).join('')}
+        </table>
+      </div>
 
-    ${m.tera?`<div style="text-align:center;margin-bottom:14px">Tera: <b>${m.tera}</b></div>`:''}
-
-    <div class="info-grid">
-      <div class="info-box"><div class="k">Ability</div><div class="v abl">${m.ability}</div></div>
-      <div class="info-box"><div class="k">Nature</div><div class="v">${m.nature}</div></div>
-    </div>
-
-    <div class="eff" id="descAbility"><b>Ability:</b> ${m.abDesc!=null?`<span class="abl" style="color:#b1e6ff">${m.ability}:</span> ${m.abDesc}`:'yükleniyor…'}</div>
-    <div style="height:8px"></div>
-    <div class="eff" id="descNature"><b>Nature:</b> ${m.natDesc!=null?`${m.nature} — ${m.natDesc}`:'yükleniyor…'}</div>
-
-    <div class="sec">Stat Dağılımı — Lv.100 · IV · EV</div>
-    <div class="statbox">
-      <table>
-        <tr><th>Stat</th><th>Lv.100</th><th>IV</th><th>EV</th></tr>
-        ${STAT_ORDER.map(s=>`
-        <tr>
-          <td style="color:${STAT_COLORS[s.key]}">${s.label}${arrow(s.key)}</td>
-          <td class="v100">${v100(s.key)}</td>
-          <td class="iv">${stat(m.ivs,s.key)}</td>
-          <td class="ev">${stat(m.evs,s.key)}</td>
-        </tr>`).join('')}
-      </table>
-    </div>
-
-    <div class="sec">Base Statlar</div>
-    <div class="statbox" style="opacity:.92">
-      <table>
-        <tr><th>Stat</th><th style="width:52%">Base</th></tr>
-        ${m.base ? baseTableRows(m) : '<tr><td colspan="2" class="na">çekiliyor…</td></tr>'}
-      </table>
-    </div>
-
-    <div class="sec">Hamleler</div>
-    <div class="eff">${m.moves.map(x=>'• '+x).join('<br>')||'—'}</div>`;
+      <div class="sec">Base Statlar</div>
+      <div class="statbox" style="opacity:.92">
+        <table>
+          <tr><th>Stat</th><th style="width:58%">Base</th></tr>
+          ${m.base ? baseTableRows(m) : '<tr><td colspan="2" class="na">çekiliyor…</td></tr>'}
+        </table>
+      </div>
+    </div>`;
 }
 
-// Base statları büyükten küçüğe sıralar, en yüksekten -> en düşüğe yeşil→kırmızı bar ile listeler
+// Base statları: sırada STAT Dağılımı ile aynı (ATK,DEF,SPD,SPATK,SPDEF,HP); renkler değere göre (en yüksek yeşil→en düşük kırmızı)
 function baseTableRows(m){
-  const entries = KEYS.map(k=>({k, v:m.base.stats[k]})).sort((a,b)=>b.v-a.v);
-  const max = entries[0].v, min = entries[entries.length-1].v;
-  return entries.map((e,i)=>{
-    // yeşil (#58c058) → kırmızı (#e05a5a) ara tonları
-    const t = entries.length>1 ? i/(entries.length-1) : 0;
-    const hue = 130 - 130*t;
-    const color = `hsl(${hue},60%,55%)`;
-    const width = max>0 ? (e.v/max*100).toFixed(1) : 0;
+  const vals = STAT_ORDER.map(s=>m.base.stats[s.key]);
+  const sorted = [...vals].sort((a,b)=>b-a);
+  const max = sorted[0];
+  return STAT_ORDER.map((s,i)=>{
+    const v = vals[i];
+    const r = sorted.indexOf(v);
+    const t = vals.length>1 ? r/(vals.length-1) : 0;
+    const hue = 130 - 130*t; // yeşil → kırmızı
+    const color = `hsl(${hue},60%,58%)`;
+    const width = max>0 ? (v/max*100).toFixed(1) : 0;
     return `
     <tr>
-      <td style="color:${STAT_COLORS[e.k]}">${STAT_LABEL(e.k)}</td>
+      <td style="color:${STAT_COLORS[s.key]}">${s.label}</td>
       <td>
-        <div style="display:flex;align-items:center;gap:8px">
-          <div style="flex:1;height:8px;background:#1a2230;border-radius:5px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="flex:1;height:9px;background:#1a2230;border-radius:5px;overflow:hidden">
             <div style="width:${width}%;height:100%;background:${color};border-radius:5px"></div>
           </div>
-          <span style="width:36px;text-align:right;color:#fff">${e.v}</span>
+          <span style="width:40px;text-align:right;color:#fff">${v}</span>
         </div>
       </td>
     </tr>`;
@@ -655,6 +706,9 @@ function fillModalDescriptions(m){
         if(modalMon===m) refreshModal(m);
       }).catch(()=>{});
     }
+  }
+  if(!m.moveMeta){
+    loadMoveMeta(m).then(()=>{ if(m.moveMeta && modalMon===m) refreshModal(m); });
   }
 }
 function refreshModal(m){
@@ -710,7 +764,6 @@ async function addFromPaste(){
 }
 render();
 loadInventory();
-</script>render();
 </script>
 </body>
 </html>
