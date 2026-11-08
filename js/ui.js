@@ -80,7 +80,7 @@ function renderModal(m){
   }
   const root = $('#tpl-modal').content.cloneNode(true);
 
-  root.querySelector('.types').innerHTML = typeChips(m.types) || '<span class="na">türler yükleniyor…</span>';
+  root.querySelector('.types').innerHTML = typeChips(m.types) || '<span class="na">loading types…</span>';
   root.querySelector('.name').textContent = m.name;
   root.querySelector('.lvl').textContent = `Lv. ${m.level ?? '?'}`;
   root.querySelector('.lvl-extra').textContent = m.tera ? 'Tera: ' + m.tera : '';
@@ -110,9 +110,9 @@ function renderModal(m){
 
   // Alt orta blok: ability + nature adı/açıklaması (hamleler ve base statların altında, ortalanmış)
   root.querySelector('.fAbility').innerHTML =
-    `<b>Ability:</b> <span class="abl">${esc(m.ability)}</span> — ${m.abDesc != null ? esc(m.abDesc) : 'yükleniyor…'}`;
+    `<b>Ability:</b> <span class="abl">${esc(m.ability)}</span> — ${m.abDesc != null ? esc(m.abDesc) : 'loading…'}`;
   root.querySelector('.fNature').innerHTML =
-    `<b>Nature:</b> <b>${esc(m.nature)}</b> — ${m.natDesc != null ? esc(m.natDesc) : 'yükleniyor…'}`;
+    `<b>Nature:</b> <b>${esc(m.nature)}</b> — ${m.natDesc != null ? esc(m.natDesc) : 'loading…'}`;
 
   modal.innerHTML = '';
   modal.appendChild(root);
@@ -130,7 +130,7 @@ function renderModal(m){
 
 /* Hamle tooltip: tür + kategori ikonu + Power/Acc/PP + açıklama */
 function showMoveTip(e, mv, m){
-  tooltip.innerHTML = `<b>${esc(mv)}</b><br><span class="skel">Yükleniyor…</span>`;
+  tooltip.innerHTML = `<b>${esc(mv)}</b><br><span class="skel">Loading…</span>`;
   placeTip(e);
   moveMeta(mv).then(d => {
     if(m.moveMeta) m.moveMeta[mv] = d; else m.moveMeta = {[mv]: d};
@@ -141,8 +141,8 @@ function showMoveTip(e, mv, m){
     bits.push(`Pwr: <b>${d.power ?? '—'}</b>`, `Acc: <b>${d.accuracy ?? '—'}%</b>`, `PP: <b>${d.pp ?? '—'}</b>`);
     tooltip.innerHTML = `
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:5px">${bits.join('')}</div>
-      <b>${esc(mv)}</b><br>${esc(d.desc || 'Açıklama bulunamadı.')}`;
-  }).catch(() => { tooltip.innerHTML = `<b>${esc(mv)}</b><br><i>Bilgi çekilemedi.</i>`; });
+      <b>${esc(mv)}</b><br>${esc(d.desc || 'No description available.')}`;
+  }).catch(() => { tooltip.innerHTML = `<b>${esc(mv)}</b><br><i>Could not load data.</i>`; });
 }
 
 // Base statlar: sırada Stat Dağılımı ile aynı; renk Pokémon'un kendi değer sırasına göre (yeşil→kırmızı)
@@ -170,21 +170,16 @@ function baseTableRows(m){
 
 function moveRows(m){
   const metas = m.moveMeta || {};
-  if(!m.moves.length) return '<tr><td colspan="6" class="na">henüz hamle yok</td></tr>';
+  if(!m.moves.length) return '<tr><td colspan="3" class="na">no moves</td></tr>';
   return m.moves.map(mv=>{
     const mt = metas[mv];
     const tdType = mt ? `<td class="c-type"><span class="type-icon t-${mt.type}">${mt.type.toUpperCase()}</span></td>` : '<td class="c-type na">…</td>';
     const tdCat = mt && CAT_ICON[mt.cat]
       ? `<td class="c-cat"><img class="caticon" src="${CAT_ICON[mt.cat].icon}" width="27" height="18" alt="${CAT_ICON[mt.cat].label}" title="${CAT_ICON[mt.cat].label}"></td>`
       : '<td class="c-cat na">…</td>';
-    const vals = mt ? [mt.power ?? '—', (mt.accuracy ?? '—') + '%', mt.pp ?? '—']
-                    : ['…','…','…'];
     return `<tr>
       ${tdType}${tdCat}
       <td class="c-name"><span class="movelink" data-move="${esc(mv)}">${esc(mv)}</span></td>
-      <td class="v100">${vals[0]}</td>
-      <td class="v100">${vals[1]}</td>
-      <td class="v100">${vals[2]}</td>
     </tr>`;
   }).join('');
 }
@@ -196,12 +191,12 @@ function fetchModalData(m){
     abilityDesc(m.ability).then(d => {
       m.abDesc = d;
       if(modalMon===m) renderModal(m);
-    }).catch(() => { m.abDesc = 'Açıklama çekilemedi (ağ hatası).'; if(modalMon===m) renderModal(m); });
+    }).catch(() => { if(modalMon===m) renderModal(m); });
   }
   if(m.natDesc == null && !m._natTried){
     m._natTried = true;
     natureDesc(m.nature).then(d => { m.natDesc = d; if(modalMon===m) renderModal(m); })
-      .catch(() => { m.natDesc = 'Açıklama çekilemedi (ağ hatası).'; if(modalMon===m) renderModal(m); });
+      .catch(() => { if(modalMon===m) renderModal(m); });
   }
   if(!m.base){
     baseStats(m.name).then(b => {
@@ -221,16 +216,16 @@ function placeTip(e){
 function hideTip(){ tooltip.style.display = 'none'; }
 
 function showAbilityTip(e, m){
-  tooltip.innerHTML = `<b>${esc(m.ability)}</b><br><span class="skel">Yükleniyor…</span>`;
+  tooltip.innerHTML = `<b>${esc(m.ability)}</b><br><span class="skel">Loading…</span>`;
   placeTip(e);
   abilityDesc(m.ability).then(d => { tooltip.innerHTML = `<b>${esc(m.ability)}</b><br>${esc(d)}`; })
-    .catch(() => { tooltip.innerHTML = `<b>${esc(m.ability)}</b><br><i>Açıklama çekilemedi.</i>`; });
+    .catch(() => { tooltip.innerHTML = `<b>${esc(m.ability)}</b><br><i>Could not load description.</i>`; });
 }
 function showNatureTip(e, m){
-  tooltip.innerHTML = `<b>${esc(m.nature)} Nature</b><br><span class="skel">Yükleniyor…</span>`;
+  tooltip.innerHTML = `<b>${esc(m.nature)} Nature</b><br><span class="skel">Loading…</span>`;
   placeTip(e);
   natureDesc(m.nature).then(d => { tooltip.innerHTML = `<b>${esc(m.nature)} Nature</b><br>${esc(d)}`; })
-    .catch(() => { tooltip.innerHTML = `<b>${esc(m.nature)} Nature</b><br><i>Açıklama çekilemedi.</i>`; });
+    .catch(() => { tooltip.innerHTML = `<b>${esc(m.nature)} Nature</b><br><i>Could not load description.</i>`; });
 }
 
 /* ---------- mesaj / kuyruk göstergesi ---------- */
@@ -254,7 +249,7 @@ export function initUI({ remove, clearAll }){
   clearAllRef = clearAll;
   $('#btnClear').addEventListener('click', () => {
     if(!mons.length) return;
-    if(confirm("Envanterdeki tüm Pokémon'lar silinecek. Emin misin?")) clearAllRef();
+    if(confirm("All Pokémon will be removed from the inventory. Are you sure?")) clearAllRef();
   });
   overlay.addEventListener('click', e => { if(e.target === overlay) closeModal(); });
   document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal(); });

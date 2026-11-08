@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IV Calculator — Pokémon Envanteri</title>
+<title>IV Calculator — Pokémon Inventory</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -12,17 +12,17 @@
 <div class="layout">
   <!-- SOL: form -->
   <div class="panel">
-    <h2>Pokémon Ekle</h2>
+    <h2>Add Pokémon</h2>
     <textarea id="paste" placeholder="Ör.&#10;Mankey&#10;Level: 22&#10;Adamant Nature&#10;Ability: Anger Point&#10;EVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe&#10;IVs: 15 HP / 27 Atk / 4 Def / 29 SpA / 28 SpD / 11 Spe&#10;- Cross Chop&#10;- Swagger&#10;- Pursuit&#10;- Seismic Toss"></textarea>
-    <button class="btn-add" id="btnAdd">＋ Envantere Ekle</button>
+    <button class="btn-add" id="btnAdd">＋ Add to Inventory</button>
     <div class="msg" id="msg"></div>
     <div class="status" id="status"></div>
   </div>
 
   <!-- SAĞ: envanter -->
   <div class="panel">
-    <h2>Envanter (<span id="count">0</span>)
-      <button class="danger" id="btnClear" title="Envanterdeki tüm Pokémon'ları sil">🗑 Tümünü Sil</button>
+    <h2>Inventory (<span id="count">0</span>)
+      <button class="danger" id="btnClear" title="Delete all Pokémon in the inventory">🗑 Clear All</button>
     </h2>
     <div class="grid" id="grid"></div>
   </div>
@@ -30,7 +30,7 @@
 
 <!-- Boş alan -->
 <div id="slotHolder" style="display:none">
-  <div class="slot" id="emptySlot" data-slot><span class="plus">＋</span><span>Boş alan — eklemek için tıkla</span></div>
+  <div class="slot" id="emptySlot" data-slot><span class="plus">＋</span><span>Empty slot — click to add</span></div>
 </div>
 
 <!-- tooltip -->
@@ -44,14 +44,14 @@
 <!-- Kart şablonu -->
 <template id="tpl-card">
   <div class="card">
-    <button class="del" title="Sil">✕</button>
+    <button class="del" title="Delete">✕</button>
     <img class="sprite" width="88" height="88" alt="">
     <div class="name"></div>
     <div class="types"></div>
     <div class="lvl"></div>
     <div class="tiny-rows">
       <div class="tiny-row"><span>Ability</span><span class="tip ability"></span></div>
-      <div class="tiny-row"><span>IV Toplam</span><span class="iv-sum"></span></div>
+      <div class="tiny-row"><span>Total IV</span><span class="iv-sum"></span></div>
     </div>
     <div class="ivbadge" title="IV toplamı (max 186)"><span class="tv">0</span> <small>IV</small></div>
     <div class="types"></div>
@@ -70,29 +70,29 @@
       <div class="lvl-extra" style="color:var(--muted);font-size:.85rem;margin-top:4px"></div>
     </div>
     <div class="m-total">
-      <div class="lbl">Toplam IV <span class="tvsum"></span> / 186</div>
+      <div class="lbl">Total IV <span class="tvsum"></span> / 186</div>
       <div class="big"><span class="tv">0</span></div>
       <div class="bar"><div class="tvbar"></div></div>
     </div>
-    <div class="sec">Hamleler</div>
+    <div class="sec">Moves</div>
     <div class="statbox">
       <table class="movetable">
         <thead>
-          <tr><th>Tür</th><th>Kateg.</th><th style="text-align:left">Hamle</th><th>Pwr</th><th>Acc</th><th>PP</th></tr>
+          <tr><th>Type</th><th>Cat.</th><th style="text-align:left">Move</th></tr>
         </thead>
         <tbody id="movesBody"></tbody>
       </table>
     </div>
   </div>
   <div class="m-right">
-    <div class="sec">Stat Dağılımı — Lv.100 · IV · EV</div>
+    <div class="sec">Stats — Lv.100 · IV · EV</div>
     <div class="statbox">
       <table>
         <tr><th>Stat</th><th>Lv.100</th><th>IV</th><th>EV</th></tr>
         <tbody id="statBody"></tbody>
       </table>
     </div>
-    <div class="sec">Base Statlar</div>
+    <div class="sec">Base Stats</div>
     <div class="statbox" style="opacity:.92">
       <table>
         <tr><th>Stat</th><th style="width:58%">Base</th></tr>
@@ -101,8 +101,8 @@
     </div>
   </div>
   <div class="m-footer">
-    <div class="footerline fAbility"><b>Ability:</b> <span class="fad">yükleniyor…</span></div>
-    <div class="footerline fNature"><b>Nature:</b> <span class="fnd">yükleniyor…</span></div>
+    <div class="footerline fAbility"><b>Ability:</b> <span class="fad">loading…</span></div>
+    <div class="footerline fNature"><b>Nature:</b> <span class="fnd">loading…</span></div>
   </div>
 </template>
 

@@ -20,7 +20,7 @@ btnAdd.addEventListener('click', () => {
   addMon(mon);
   showMessage({
     type:'ok',
-    text:`✔ ${mon.name} envantere eklendi (IV toplam: ${[...Object.entries(mon.ivs)].reduce((s,[,v])=>s+v,0)}/186) — detayları arka planda çekiliyor.`
+    text:`✔ ${mon.name} added to inventory (Total IV: ${[...Object.entries(mon.ivs)].reduce((s,[,v])=>s+v,0)}/186) — fetching details in background.`
   });
   paste.value = '';
 });

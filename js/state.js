@@ -45,10 +45,10 @@ async function processQueue(){
       await loadMoveMeta(mon);
       try{ mon.calc = await calcMon(mon); }catch(e){}
       mon.loading = false;
-      message('ok', `✔ ${mon.name}: stat verileri güncellendi.`);
+      message('ok', `✔ ${mon.name}: stat data updated.`);
     }catch(err){
       mon.err = err.message; mon.loading = false;
-      message('err', `⚠ ${mon.name}: veri çekilemedi (${err.message}); tooltip/modal'da tekrar denenir.`);
+      message('err', `⚠ ${mon.name}: could not fetch data (${err.message}); will retry in tooltip/modal.`);
     }
     saveInventory();
     updateQueueStatus();
@@ -73,7 +73,7 @@ export function removeMon(index){
   const [m] = mons.splice(index,1);
   saveInventory();
   emit('grid');
-  if(m) message('ok', `🗑 ${m.name} envanterden silindi.`);
+  if(m) message('ok', `🗑 ${m.name} removed from inventory.`);
   return m;
 }
 
@@ -81,7 +81,7 @@ export function clearAll(){
   mons.length = 0;
   saveInventory();
   emit('grid');
-  message('ok', '🗑 Envanter boşaltıldı.');
+  message('ok', '🗑 Inventory cleared.');
 }
 
 /* ---------- kalıcılık ---------- */
@@ -103,7 +103,7 @@ export function loadInventory(){
   data.forEach(d => {
     mons.push(Object.assign({ evs:{}, ivs:{}, moves:[], loading:true }, d));
   });
-  if(mons.length) message('ok', `✔ ${mons.length} Pokémon tarayıcı kaydından geri yüklendi.`);
+  if(mons.length) message('ok', `✔ ${mons.length} Pokémon restored from browser storage.`);
   emit('grid');
   mons.forEach(enqueueDataFetch);
 }
