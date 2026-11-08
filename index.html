@@ -3,126 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pokémon Envanteri — pokemondb scraper</title>
-<style>
-:root{
-  --bg:#151a23; --panel:#1e2633; --panel2:#253043; --border:#38455c;
-  --text:#e8edf6; --muted:#8fa0b8; --accent:#ffcc00; --accent2:#3ec7c7;
-  --hp:#58c058; --atk:#e05a5a; --def:#d9903a; --spa:#6a86e0; --spd:#b05ad0; --spe:#4ab7c9;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;padding:24px}
-h1{font-size:1.4rem;display:flex;align-items:center;gap:10px}
-h1 img{width:34px;height:34px}
-.sub{color:var(--muted);font-size:.85rem;margin-bottom:18px}
-.layout{display:grid;grid-template-columns:340px 1fr;gap:20px}
-@media(max-width:900px){.layout{grid-template-columns:1fr}}
-.panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px}
-.panel h2{font-size:1rem;margin-bottom:10px;color:var(--accent)}
-textarea{width:100%;height:210px;background:#10151d;color:#d6e2ef;border:1px solid var(--border);
-  border-radius:10px;padding:10px;font-family:Consolas,monospace;font-size:.82rem;resize:vertical}
-textarea:focus{outline:1px solid var(--accent2)}
-button{cursor:pointer;border:none;border-radius:9px;font-weight:600;font-size:.88rem;padding:10px 16px;
-  transition:.15s}
-button:disabled{opacity:.45;cursor:not-allowed}
-.btn-add{background:var(--accent);color:#232323;width:100%;margin-top:10px}
-.btn-add:hover:not(:disabled){filter:brightness(1.1)}
-.danger{background:#3a1f24;color:#ff9b9b;border:1px solid #6b3038;font-size:.72rem;padding:5px 10px;margin-left:10px;vertical-align:middle}
-.danger:hover{background:#5a2c32}
-.card .del{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;
-  background:rgba(0,0,0,.45);color:#ff9b9b;font-size:.8rem;line-height:1;display:none;
-  align-items:center;justify-content:center;cursor:pointer;border:none;padding:0;opacity:.85}
-.card:hover .del{display:flex}
-.card .del:hover{background:#c04040;color:#fff}
-.hint{color:var(--muted);font-size:.75rem;margin-top:8px;line-height:1.5}
-.msg{margin-top:10px;font-size:.8rem;border-radius:8px;padding:8px 10px;display:none}
-.msg.err{display:block;background:#4a1f24;border:1px solid #b05050;color:#ffb1b1}
-.msg.ok{display:block;background:#1f3d28;border:1px solid #58a060;color:#a7e8ae}
-.status{font-size:.75rem;color:var(--muted);margin-top:8px;display:none}
-.status.show{display:block}
-
-/* Envanter grid */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
-.slot{height:230px;border-radius:14px;border:2px dashed var(--border);background:var(--panel);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
-  color:var(--muted);cursor:pointer;transition:.15s;font-size:.8rem;overflow:hidden}
-.slot:hover{border-color:var(--accent2);color:var(--accent2);transform:translateY(-2px)}
-.slot .plus{font-size:2rem;line-height:1}
-.card{position:relative;background:linear-gradient(160deg,var(--panel2),var(--panel));border:1px solid var(--border);
-  border-radius:14px;padding:12px;text-align:center;cursor:pointer;transition:.15s;overflow:hidden}
-.card:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 6px 18px rgba(0,0,0,.4)}
-.card img{width:88px;height:88px;object-fit:contain;image-rendering:pixelated}
-.card .name{font-weight:700;margin-top:4px;text-transform:capitalize}
-.card .lvl{color:var(--muted);font-size:.75rem}
-.tiny-rows{margin-top:8px;display:flex;flex-direction:column;gap:4px;font-size:.76rem;text-align:left}
-.tiny-row{display:flex;justify-content:space-between;background:rgba(0,0,0,.25);border-radius:6px;padding:3px 7px}
-.tiny-row span:first-child{color:var(--muted)}
-.tip{cursor:help;border-bottom:1px dotted var(--muted)}
-.tooltip{position:fixed;z-index:60;max-width:280px;background:#0d1117;border:1px solid var(--accent2);
-  border-radius:9px;padding:9px 11px;font-size:.76rem;line-height:1.45;pointer-events:none;
-  box-shadow:0 6px 18px rgba(0,0,0,.5);display:none}
-.tooltip b{color:var(--accent2)}
-.ivbadge{margin-top:9px;display:inline-block;background:var(--accent);color:#232323;font-weight:700;
-  font-size:.8rem;border-radius:8px;padding:3px 10px}
-.ivbadge small{font-weight:500;opacity:.8}
-
-/* Modal — yatay kart */
-.overlay{position:fixed;inset:0;background:rgba(5,8,14,.75);backdrop-filter:blur(3px);
-  display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
-.overlay.open{display:flex}
-.modal{background:linear-gradient(160deg,#2a3549,var(--panel));border:1px solid var(--border);
-  border-radius:18px;max-width:1080px;width:100%;padding:26px 28px;position:relative;
-  display:grid;grid-template-columns:300px 1fr;gap:26px;align-items:start;
-  font-size:1.08rem;max-height:94vh;overflow-y:auto}
-.modal .close{position:absolute;top:12px;right:12px;background:var(--panel2);color:var(--text);
-  width:34px;height:34px;padding:0;z-index:2}
-.modal .close:hover{background:#c04040}
-.m-left{text-align:center}
-.m-head{margin-bottom:6px}
-.m-head img{width:170px;height:170px;object-fit:contain;image-rendering:pixelated}
-.m-head .name{font-size:1.9rem;font-weight:800;text-transform:capitalize}
-.m-head .lvl{color:var(--accent);font-weight:700;margin-bottom:10px;font-size:1.15rem}
-.m-total{margin:10px 0 16px}
-.m-total .big{font-size:2rem;font-weight:800;color:var(--accent)}
-.m-total .lbl{font-size:.8rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
-.m-total .bar{height:9px;background:#0d1117;border-radius:5px;margin-top:6px;overflow:hidden}
-.m-total .bar>div{height:100%;background:linear-gradient(90deg,#c9903a,var(--accent));border-radius:5px}
-.info-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:14px}
-.info-box{background:rgba(0,0,0,.28);border-radius:10px;padding:11px 13px;text-align:left}
-.info-box .k{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
-.info-box .v{font-weight:700;margin-top:2px;font-size:1.08rem}
-.sec{font-size:.82rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin:16px 0 8px}
-/* Showdown tarzı stat kutusu */
-.statbox{background:#0d1117;border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-weight:700}
-.statbox table{width:100%;border-collapse:collapse;font-size:1.05rem}
-.statbox th{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;text-align:right;padding:0 6px 8px;font-weight:600}
-.statbox th:first-child{text-align:left}
-.statbox td{padding:7px 6px;text-align:right;border-top:1px solid rgba(255,255,255,.06)}
-.statbox td:first-child{text-align:left}
-.statbox .v100{color:#fff;min-width:60px}
-.statbox .iv{color:var(--accent)}
-.statbox .ev{color:#9fb3c8;font-weight:600}
-.statbox .na{color:var(--muted);font-weight:400}
-.statbox .arrow-alert{color:var(--hp)} .statbox .arrow-down{color:var(--atk)}
-.statbar{display:grid;grid-template-columns:64px 1fr 44px;align-items:center;gap:10px;margin:7px 0;font-size:.92rem;font-weight:600}
-.statbar .track{height:10px;background:#1a2230;border-radius:5px;overflow:hidden}
-.statbar .fill{height:100%;border-radius:5px;transition:width .4s}
-.eff{background:rgba(0,0,0,.28);border-radius:10px;padding:12px 14px;font-size:1rem;line-height:1.55;color:#cdd8e6}
-.abl{color:#b1e6ff;font-weight:700}
-/* move rozetleri */
-.moves{display:flex;flex-wrap:wrap;gap:8px}
-.movechip{display:inline-flex;align-items:center;gap:7px;background:rgba(0,0,0,.28);
-  border-radius:9px;padding:6px 10px;font-size:.95rem;font-weight:700}
-.movechip .ty{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;
-  color:#fff;background:#666;border-radius:6px;padding:2px 8px}
-.movechip .cat{font-size:.78rem;opacity:.9}
-.skel{animation:pulse 1.2s infinite ease-in-out}
-@keyframes pulse{50%{opacity:.4}}
-.loading .name::after{content:"…"}
-@media(max-width:900px){
-  .modal{grid-template-columns:1fr;overflow-y:auto}
-}
-</style>
+<title>IV Calculator — Pokémon Envanteri</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -130,7 +12,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
   <!-- SOL: form -->
   <div class="panel">
     <h2>Pokémon Ekle</h2>
-    <textarea id="paste" placeholder="Ör.&#10;Mankey&#10;Level: 22&#10;Adamant Nature&#10;Ability: Anger Point&#10;EVs: 0 HP / 0 Atk / ...&#10;IVs: 15 HP / 27 Atk / 4 Def / 29 SpA / 28 SpD / 11 Spe&#10;- Cross Chop&#10;- Swagger&#10;- Pursuit&#10;- Seismic Toss"></textarea>
+    <textarea id="paste" placeholder="Ör.&#10;Mankey&#10;Level: 22&#10;Adamant Nature&#10;Ability: Anger Point&#10;EVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe&#10;IVs: 15 HP / 27 Atk / 4 Def / 29 SpA / 28 SpD / 11 Spe&#10;- Cross Chop&#10;- Swagger&#10;- Pursuit&#10;- Seismic Toss"></textarea>
     <button class="btn-add" id="btnAdd">＋ Envantere Ekle</button>
     <div class="msg" id="msg"></div>
     <div class="status" id="status"></div>
@@ -141,10 +23,13 @@ button:disabled{opacity:.45;cursor:not-allowed}
     <h2>Envanter (<span id="count">0</span>)
       <button class="danger" id="btnClear" title="Envanterdeki tüm Pokémon'ları sil">🗑 Tümünü Sil</button>
     </h2>
-    <div class="grid" id="grid">
-      <div class="slot" data-slot><span class="plus">＋</span><span>Boş alan — eklemek için tıkla</span></div>
-    </div>
+    <div class="grid" id="grid"></div>
   </div>
+</div>
+
+<!-- Boş alan -->
+<div id="slotHolder" style="display:none">
+  <div class="slot" id="emptySlot" data-slot><span class="plus">＋</span><span>Boş alan — eklemek için tıkla</span></div>
 </div>
 
 <!-- tooltip -->
@@ -155,615 +40,63 @@ button:disabled{opacity:.45;cursor:not-allowed}
   <div class="modal" id="modal"></div>
 </div>
 
-<script>
-const PROXY = u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u);
-const cache = { abilities:{}, natures:null };
-
-/* ---------- parse ---------- */
-function slugify(s){ return s.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
-
-function parseMon(text){
-  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
-  const out = { moves:[], evs:{}, ivs:{} };
-  for(const line of lines){
-    if(/^Ability\s*:/i.test(line)) out.ability = line.split(/:(.+)/)[1].trim();
-    if(/^Tera Type/i.test(line)) out.tera = line.split(/:(.+)/)[1].trim();
-    if(/nature$/i.test(line)) out.nature = line.trim().replace(/\s*nature$/i,'');
-    if(/^Level\s*:/i.test(line)) out.level = +line.split(':')[1].trim();
-    if(/^EVs\s*:/i.test(line)) out.evs = parseStats(line.split(/:(.+)/)[1]);
-    if(/^IVs\s*:/i.test(line)) out.ivs = parseStats(line.split(/:(.+)/)[1]);
-    if(/^-/.test(line)) out.moves.push(line.replace(/^-\s*/,'').trim());
-  }
-  // İsim: "Mankey" veya "Mankey @ Item" veya "Mankey (M)" formatları
-  const nameLine = lines.find(l =>
-    !/^[\w]+ Nature$/i.test(l) && !/^(Ability|Level|EVs|IVs|Tera|Shiny):/i.test(l) && !/^-/.test(l) && !/EVs|IVs/i.test(l));
-  if(nameLine) out.name = nameLine.replace(/@.*$/,'').replace(/\((M|F)\)\s*$/,'').trim();
-  if(!out.name || !out.ability || !out.nature) throw new Error('İsim, Ability ve Nature satırları mutlaka olmalı! Metni kontrol et.');
-  return out;
-}
-function parseStats(str){
-  const o = {};
-  for(const part of str.split('/')){
-    const m = part.trim().match(/^(\d+)\s+([A-Za-z]+)/);
-    if(m) o[m[2]] = parseInt(m[1],10);
-  }
-  return o;
-}
-const KEYS = ['HP','Atk','Def','SpA','SpD','Spe']; // iç anahtarlar (parse + hesap)
-// Gösterim sırası ve isimleri (kullanıcı tercihi)
-const STAT_ORDER = [
-  {key:'Atk',   label:'ATK'},
-  {key:'Def',   label:'DEF'},
-  {key:'Spe',   label:'SPD'},
-  {key:'SpA',   label:'SPATK'},
-  {key:'SpD',   label:'SPDEF'},
-  {key:'HP',    label:'HP'},
-];
-const STAT_LABEL = k => STAT_ORDER.find(s=>s.key===k)?.label ?? k;
-function stat(o,k){ return o[k] ?? 0; }
-function totalIV(ivs){ return KEYS.reduce((s,k)=>s+stat(ivs,k),0); }
-
-/* ---------- fetch: kaynaklar ----------
- * Birincil kaynak: PokéAPI (tarayıcıdan doğrudan CORS-ok, proxy gerektirmez)
- * Yedek: pokemondb.net (allorigins proxy üzerinden HTML parse)
- */
-async function fetchText(url){
-  const r = await fetch(PROXY(url));
-  if(!r.ok) throw new Error('HTTP '+r.status);
-  return await r.text();
-}
-async function fetchJSON(url){
-  const r = await fetch(url);
-  if(!r.ok) throw new Error('HTTP '+r.status);
-  return await r.json();
-}
-function prettyStat(apiName){
-  return {attack:'Atk',defense:'Def','special-attack':'SpA','special-defense':'SpD',speed:'Spe',hp:'HP'}[apiName] ?? apiName;
-}
-const abNameFixes = { // Showdown adı → PokéAPI slug farkları
-  'battle bond':'battle-bond','power construct':'power-construct','gulp missile':'gulp-missile',
-  'escape artist':'escape-artist','neutralizing gas':'neutralizing-gas'
-};
-const abSlug = name => {
-  const s = slugify(name);
-  return abNameFixes[s] || s;
-};
-
-// Promise-cache: aynı kaynağa eşzamanlı veya tekrarlı istekler tek fetch'i paylaşır
-cache.abPending = {};
-let naturePromise = null;
-
-// Ability açıklaması
-async function abilityDesc(name){
-  const slug = abSlug(name);
-  if(cache.abilities[slug] !== undefined) return cache.abilities[slug];
-  if(cache.abPending[slug]) return cache.abPending[slug];
-  cache.abPending[slug] = (async () => {
-    let desc;
-    // 1) PokéAPI: en-İngilizce effect_entries
-    try{
-      const j = await fetchJSON('https://pokeapi.co/api/v2/ability/'+slug);
-      const en = (j.effect_entries||[]).find(e=>e.language?.name==='en');
-      desc = en?.short_effect?.trim() || en?.effect?.trim();
-      // 2) pokemondb fallback (ya da hiç desc gelmediyse)
-      if(!desc) desc = await abilityDescDB(slug);
-    }catch(e){
-      desc = await abilityDescDB(slug); // PokéAPI devre dışıysa pokemondb'yi dene
-    }
-    if(desc.length>400) desc = desc.slice(0,380).replace(/\s+\S*$/,'') + '…';
-    cache.abilities[slug] = desc || 'Açıklama bulunamadı.';
-    delete cache.abPending[slug];
-    return cache.abilities[slug];
-  })();
-  cache.abPending[slug].catch(()=>{ delete cache.abPending[slug]; });
-  return cache.abPending[slug];
-}
-
-// pokemondb HTML scrape (yedek)
-async function abilityDescDB(slug){
-  const html = await fetchText('https://pokemondb.net/ability/'+slug);
-  const doc = new DOMParser().parseFromString(html,'text/html');
-  let desc = doc.querySelector('.view-effect')?.textContent?.trim();
-  if(!desc){
-    const td = doc.querySelector('.vitals-table tbody tr td');
-    desc = td ? td.textContent.trim() : '';
-  }
-  return desc || '';
-}
-
-// Nature bilgisi (yapılandırılmış): { inc:'attack'|null, dec:'defense'|null }
-async function natureInfo(name){
-  const key = name.toLowerCase();
-  if(cache.natures && cache.natures[key]) return cache.natures[key];
-  if(!naturePromise){
-    naturePromise = (async () => {
-      if(!cache.natures) cache.natures = {};
-      let info;
-      try{
-        const j = await fetchJSON('https://pokeapi.co/api/v2/nature/'+key);
-        info = { inc: j.increased_stat?.name ?? null, dec: j.decreased_stat?.name ?? null };
-      }catch(e){
-        // PokéAPI'de yoksa → pokemondb tablo fallback
-        const html = await fetchText('https://pokemondb.net/nature');
-        const doc = new DOMParser().parseFromString(html,'text/html');
-        let hit = null;
-        doc.querySelectorAll('.vitals-table tbody tr, table.data-table tbody tr').forEach(tr=>{
-          const tds = tr.querySelectorAll('td');
-          if(tds.length>=3 && tds[0].textContent.trim().toLowerCase()===key)
-            hit = { inc: tds[1].textContent.trim(), dec: tds[2].textContent.trim() };
-        });
-        if(!hit) throw new Error('Nature bulunamadı ('+key+')');
-        info = { inc: dbStatToApi(hit.inc), dec: dbStatToApi(hit.dec) };
-      }
-      cache.natures[key] = info;
-      return info;
-    })();
-    naturePromise.catch(()=>{ naturePromise = null; }); // başarısızsa tekrar denenebilir
-  }
-  return naturePromise;
-}
-// pokemondb tablosundaki görünen stat adı → PokéAPI stat adı
-function dbStatToApi(s){
-  return { 'attack':'attack','defense':'defense','special attack':'special-attack',
-           'special defense':'special-defense','speed':'speed','hp':'hp','—':null }[s.toLowerCase()] ?? null;
-}
-// Nature açıklaması (insan-okur metin)
-function natDescOf(ni){
-  const inc = prettyStat(ni.inc), dec = prettyStat(ni.dec);
-  return (ni.inc && ni.dec)
-    ? `+${inc} / −${dec}: ${inc} statını %10 arttırır, ${dec} statını %10 azaltır.`
-    : 'Nötr nature — hiçbir statı etkilemez.';
-}
-async function natureDesc(name){
-  const ni = await natureInfo(name);
-  return natDescOf(ni);
-}
-
-/* ---------- görsel ---------- */
-function spriteURL(name){
-  return 'https://img.pokemondb.net/sprites/home/normal/'+slugify(name)+'.png';
-}
-function artURL(name){
-  return 'https://img.pokemondb.net/artwork/large/'+slugify(name)+'.png';
-}
-
-/* ---------- arka plan veri kuyruğu ---------- */
-const dataQueue = [];
-let processing = false;
-
-function updateQueueStatus(){
-  const remaining = dataQueue.length + (processing ? 1 : 0);
-  if(remaining > 0){
-    statusEl.textContent = `⏳ Arka planda ${remaining} Pokémon'un pokemondb verileri sırayla çekiliyor…`;
-    statusEl.classList.add('show');
-  } else {
-    statusEl.classList.remove('show');
-  }
-}
-
-async function processQueue(){
-  if(processing) return;
-  processing = true;
-  updateQueueStatus();
-  while(dataQueue.length){
-    const mon = dataQueue.shift();
-    const {ability, nature, name} = mon;
-    try {
-      const [ab, ni, base] = await Promise.all([abilityDesc(ability), natureInfo(nature), baseStats(mon.name)]);
-      mon.abDesc = ab; mon.natureInfo = ni; mon.base = base; mon.err = null;
-      mon.natDesc = natDescOf(ni);
-      mon.types = base.types;
-    } catch(err){
-      mon.err = err.message; mon.loading = false;
-      showMsg('err', `⚠ ${name}: veri çekilemedi (${err.message}); tekrar denendiğinde tooltip/modal güncellenir.`);
-      updateQueueStatus(); render(); updateOpenModal(mon);
-      continue;
-    }
-    // Base stat geldiyse Lv.100 stat hesabını yap + hamle rozetlerini getir
-    await loadMoveMeta(mon);
-    try { mon.calc = await calcMon(mon); } catch(e){}
-    mon.loading = false;
-    showMsg('ok', `✔ ${name}: stat verileri güncellendi.`);
-    saveInventory();
-    updateQueueStatus();
-    render();        // kart güncel dursun
-    updateOpenModal(mon);
-  }
-  processing = false;
-  updateQueueStatus();
-}
-
-function enqueueDataFetch(mon){
-  mon.abDesc = null; mon.natDesc = null; mon.err = null; mon.loading = true;
-  dataQueue.push(mon);
-  processQueue();
-}
-
-// Modal açıkken içindeki Pokémon'un verileri gelirse modalı scroll pozisyonunu koruyarak yeniden çiz
-function updateOpenModal(mon){
-  if(!overlay.classList.contains('open') || modalMon !== mon) return;
-  const scroll = document.getElementById('modal').scrollTop;
-  renderModal(mon);
-  document.getElementById('modal').scrollTop = scroll;
-}
-
-/* ---------- kalıcılık (localStorage) ---------- */
-const LS_KEY = 'ivcalc.inventory.v1';
-function saveInventory(){
-  try{
-    const data = mons.map(m=>({
-      name:m.name, level:m.level, ability:m.ability, nature:m.nature,
-      evs:m.evs, ivs:m.ivs, moves:m.moves, tera:m.tera ?? null,
-      sprite:m.sprite, art:m.art, moveMeta:m.moveMeta ?? null
-    }));
-    localStorage.setItem(LS_KEY, JSON.stringify(data));
-  }catch(e){ /* quota vb. sessizce geç */ }
-}
-function loadInventory(){
-  let data = null;
-  try{ data = JSON.parse(localStorage.getItem(LS_KEY)||'null'); }catch(e){}
-  if(!Array.isArray(data)) return;
-  data.forEach(d=>{
-    const m = Object.assign({evs:{},ivs:{},moves:[]}, d);
-    m.loading = true;
-    mons.push(m);
-    enqueueDataFetch(m);
-  });
-  if(mons.length) showMsg('ok', `✔ ${mons.length} Pokémon tarayıcı kaydından geri yüklendi.`);
-}
-
-/* ---------- envanter ---------- */
-const grid = document.getElementById('grid');
-const emptySlot = grid.querySelector('[data-slot]');
-const mons = [];
-
-function render(){
-  document.getElementById('count').textContent = mons.length;
-  emptySlot.remove(); // sıra en sonda olsun
-  grid.innerHTML = '';
-  mons.forEach((m,i)=>{
-    const c = document.createElement('div');
-    c.className='card';
-    c.dataset.i = i;
-    const tv = totalIV(m.ivs);
-    c.innerHTML = `
-      <img src="${m.sprite}" alt="${m.name}" onerror="this.onerror=null;this.src='${m.art}'">
-      <div class="name">${m.name}${m.loading?' <span class="skel" title="pokemondb verisi çekiliyor…">⏳</span>':''}</div>
-      <div class="lvl">Lv. ${m.level ?? '?'} · ${m.nature} Nature</div>
-      <div class="tiny-rows">
-        <div class="tiny-row"><span>Ability</span><span class="tip" data-tip="ab">${m.ability}</span></div>
-        <div class="tiny-row"><span>IV Toplam</span><span>${tv} / 186</span></div>
-      </div>
-      <div class="ivbadge" title="IV toplamı (max 186)">${tv} <small>IV</small></div>
-      <button class="del" title="Sil">✕</button>`;
-    c.querySelector('.del').addEventListener('click', e=>{
-      e.stopPropagation();
-      mons.splice(i,1);
-      render();
-      saveInventory();
-      showMsg('ok', `🗑 ${m.name} envanterden silindi.`);
-    });
-    c.addEventListener('click',()=>openModal(m));
-    bindTooltips(c, m);
-    grid.appendChild(c);
-  });
-  grid.appendChild(emptySlot);
-  if(!emptySlot.dataset.bound){
-    emptySlot.addEventListener('click',()=>document.getElementById('paste').focus());
-    emptySlot.dataset.bound = '1';
-  }
-}
-
-/* tooltip */
-const tipEl = document.getElementById('tooltip');
-function bindTooltips(el,m){
-  el.querySelectorAll('[data-tip]').forEach(el=>{
-    el.addEventListener('mouseenter', async e => {
-      tipEl.innerHTML = `<b>${m.ability}</b><br><span class="skel">Yükleniyor…</span>`;
-      tipEl.style.display='block';
-      const pos = e.target.getBoundingClientRect();
-      tipEl.style.left = Math.min(innerWidth-tipEl.offsetWidth-10, pos.left)+'px';
-      tipEl.style.top  = (pos.bottom+8)+'px';
-      const desc = await abilityDesc(m.ability);
-      tipEl.innerHTML = `<b>${m.ability}</b><br>${desc}`;
-    });
-    el.addEventListener('mouseleave', ()=> tipEl.style.display='none');
-  });
-  // nature tooltip'i kartın adı/Lv satırı üzerinden verelim
-  const natEl = el.querySelector('.lvl');
-  natEl.addEventListener('mouseenter', e => {
-    tipEl.innerHTML = `<b>${m.nature} Nature</b><br><span class="skel">Yükleniyor…</span>`;
-    tipEl.style.display='block';
-    const pos = e.target.getBoundingClientRect();
-    tipEl.style.left = Math.min(innerWidth-tipEl.offsetWidth-10, pos.left)+'px';
-    tipEl.style.top  = (pos.bottom+8)+'px';
-    natureDesc(m.nature).then(d=>{ tipEl.innerHTML=`<b>${m.nature} Nature</b><br>${d}`; });
-    natEl.addEventListener('mouseleave',()=>tipEl.style.display='none',{once:true});
-  });
-}
-
-/* ---------- modal ---------- */
-const overlay = document.getElementById('overlay');
-document.getElementById('overlay').addEventListener('click',e=>{
-  if(e.target===overlay) closeModal();
-});
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
-
-const STAT_COLORS = {HP:'var(--hp)',Atk:'var(--atk)',Def:'var(--def)',SpA:'var(--spa)',SpD:'var(--spd)',Spe:'var(--spe)'};
-function barRow(label,val,max,color){
-  const pct = Math.min(100, (val/max)*100);
-  return `<div class="statbar"><span style="color:${color}">${label}</span>
-    <div class="track"><div class="fill" style="width:${pct}%;background:${color}"></div></div>
-    <span style="text-align:right">${val}/${max}</span></div>`;
-}
-
-/* ---------- base stat + hesaplama ---------- */
-const STAT_API_TO_KEY = {hp:'HP',attack:'Atk',defense:'Def','special-attack':'SpA','special-defense':'SpD',speed:'Spe'};
-cache.baseStats = {};
-const basePending = {};
-async function baseStats(name){
-  const slug = slugify(name);
-  if(cache.baseStats[slug]) return cache.baseStats[slug];
-  if(basePending[slug]) return basePending[slug];
-  basePending[slug] = (async () => {
-    const j = await fetchJSON('https://pokeapi.co/api/v2/pokemon/'+slug);
-    const b = {};
-    j.stats.forEach(s => { const k = STAT_API_TO_KEY[s.stat.name]; if(k) b[k] = s.base_stat; });
-    cache.baseStats[slug] = { stats:b, types:j.types.map(t=>t.type.name), id:j.id };
-    delete basePending[slug];
-    return cache.baseStats[slug];
-  })();
-  basePending[slug].catch(()=>{ delete basePending[slug]; });
-  return basePending[slug];
-}
-
-// Hamle meta (tür + fiziksel/özel/status) — PokéAPI /move
-const moveMetaCache = {};
-const moveMetaPending = {};
-async function moveMeta(name){
-  const slug = slugify(name);
-  if(moveMetaCache[slug]) return moveMetaCache[slug];
-  if(moveMetaPending[slug]) return moveMetaPending[slug];
-  moveMetaPending[slug] = (async () => {
-    const j = await fetchJSON('https://pokeapi.co/api/v2/move/'+slug);
-    moveMetaCache[slug] = { type: j.type.name, cat: j.damage_class.name };
-    delete moveMetaPending[slug];
-    return moveMetaCache[slug];
-  })();
-  moveMetaPending[slug].catch(()=>{ delete moveMetaPending[slug]; });
-  return moveMetaPending[slug];
-}
-async function loadMoveMeta(m){
-  if(m.moveMeta || !m.moves?.length) return;
-  try{
-    const metas = await Promise.all(m.moves.map(x=>moveMeta(x)));
-    m.moveMeta = Object.fromEntries(m.moves.map((x,i)=>[x, metas[i]]));
-  }catch(e){ /* bazı hamleler bulunamayabilir; rozetler boş kalır */ }
-}
-
-// Lv.100 actual stat (Gen 3+ formülü, nature modifikasyonu dahil — Showdown'ın kullandığı hesap)async function calcMon(m){
-  let ni = null;
-  try{ ni = await natureInfo(m.nature); }catch(e){}
-  if(!m.base) return null;
-  const out = {};
-  KEYS.forEach(k=>{
-    const base = m.base.stats[k];
-    const iv = stat(m.ivs,k), ev = stat(m.evs,k), L = 100;
-    if(k==='HP'){
-      out[k] = Math.floor((2*base+iv+Math.floor(ev/4))*L/100)+L+10;
-    } else {
-      const inner = Math.floor((2*base+iv+Math.floor(ev/4))*L/100)+5;
-      let mod = 1;
-      if(ni && ni.inc && STAT_API_TO_KEY[ni.inc]===k) mod = 1.1;
-      if(ni && ni.dec && STAT_API_TO_KEY[ni.dec]===k) mod = 0.9;
-      out[k] = Math.floor(inner*mod);
-    }
-  });
-  return out;
-}
-
-let modalMon = null;
-function openModal(m){
-  modalMon = m;
-  overlay.classList.add('open');
-  renderModal(m);
-  fillModalDescriptions(m);
-}
-function closeModal(){ overlay.classList.remove('open'); modalMon = null; }
-
-const TYPE_COLORS = {normal:'#A8A77A',fire:'#EE8130',water:'#6390F0',electric:'#F7D02C',
-  grass:'#7AC74C',ice:'#96D9D6',fighting:'#C22E28',poison:'#A33EA1',ground:'#E2BF65',
-  flying:'#A98FF3',psychic:'#F95587',bug:'#A6B91A',rock:'#B6A136',ghost:'#735797',
-  dragon:'#6F35FC',dark:'#705746',steel:'#B7B7CE',fairy:'#D685AD'};
-const CAT_INFO = {physical:{icon:'⚔',label:'ATK',color:'#e05a5a'},
-  special:{icon:'✨',label:'SP',color:'#6a86e0'},
-  status:{icon:'🌀',label:'—',color:'#8fa0b8'}};
-
-function moveChips(m){
-  if(!m.moves.length) return '<div class="eff">—</div>';
-  const metas = m.moveMeta || {};
-  return `<div class="moves">${m.moves.map(mv=>{
-    const mt = metas[mv];
-    const ty = mt ? `<span class="ty" style="background:${TYPE_COLORS[mt.type]||'#666'}">${mt.type}</span>` : '';
-    const cat = mt && CAT_INFO[mt.cat]
-      ? `<span class="cat" style="color:${CAT_INFO[mt.cat].color}">${CAT_INFO[mt.cat].icon} ${CAT_INFO[mt.cat].label}</span>`
-      : (mt ? '' : '<span class="na">…</span>');
-    return `<span class="movechip">${ty}${cat}<span>${mv}</span></span>`;
-  }).join('')}</div>`;
-}
-
-function renderModal(m){
-  const tv = totalIV(m.ivs);
-  const asc = m.natureInfo ? STAT_API_TO_KEY[m.natureInfo.inc] : null;
-  const dsc = m.natureInfo ? STAT_API_TO_KEY[m.natureInfo.dec] : null;
-  const arrow = k => asc===k ? ' <span class="arrow-alert" title="Nature artış">▲</span>'
-               : dsc===k ? ' <span class="arrow-down" title="Nature azalış">▼</span>' : '';
-  const v100 = k => (m.calc && m.calc[k] != null) ? m.calc[k] : '<span class="na">…</span>';
-  const modal = document.getElementById('modal');
-  modal.innerHTML = `
-    <button class="close" onclick="closeModal()">✕</button>
-    <div class="m-left">
-      <div class="m-head">
-        <img src="${m.art}" onerror="this.onerror=null;this.src='${m.sprite}'">
-        <div class="name">${m.name}</div>
-        <div class="lvl">Lv. ${m.level ?? '?'}${m.types?` · <span style="text-transform:capitalize">${m.types.join(' / ')}</span>`:''}</div>
-      </div>
-
-      <div class="m-total">
-        <div class="lbl">Toplam IV ${tv} / 186</div>
-        <div class="big">${tv}</div>
-        <div class="bar"><div style="width:${(tv/186*100).toFixed(1)}%"></div></div>
-      </div>
-
-      ${m.tera?`<div style="margin-bottom:12px">Tera: <b>${m.tera}</b></div>`:''}
-
-      <div class="info-grid">
-        <div class="info-box"><div class="k">Ability</div><div class="v abl">${m.ability}</div></div>
-        <div class="info-box"><div class="k">Nature</div><div class="v">${m.nature}</div></div>
-      </div>
-
-      <div class="eff" style="text-align:left"><b>Ability:</b> ${m.abDesc!=null?`<span class="abl">${m.ability}:</span> ${m.abDesc}`:'yükleniyor…'}</div>
-      <div style="height:8px"></div>
-      <div class="eff" style="text-align:left"><b>Nature:</b> ${m.natDesc!=null?`${m.nature} — ${m.natDesc}`:'yükleniyor…'}</div>
-
-      <div class="sec">Hamleler</div>
-      ${moveChips(m)}
+<!-- Kart şablonu -->
+<template id="tpl-card">
+  <div class="card">
+    <button class="del" title="Sil">✕</button>
+    <img class="sprite" width="88" height="88" alt="">
+    <div class="name"></div>
+    <div class="types"></div>
+    <div class="lvl"></div>
+    <div class="tiny-rows">
+      <div class="tiny-row"><span>Ability</span><span class="tip ability"></span></div>
+      <div class="tiny-row"><span>IV Toplam</span><span class="iv-sum"></span></div>
     </div>
+    <div class="ivbadge" title="IV toplamı (max 186)"><span class="tv">0</span> <small>IV</small></div>
+  </div>
+</template>
 
-    <div class="m-right">
-      <div class="sec">Stat Dağılımı — Lv.100 · IV · EV</div>
-      <div class="statbox">
-        <table>
-          <tr><th>Stat</th><th>Lv.100</th><th>IV</th><th>EV</th></tr>
-          ${STAT_ORDER.map(s=>`
-          <tr>
-            <td style="color:${STAT_COLORS[s.key]}">${s.label}${arrow(s.key)}</td>
-            <td class="v100">${v100(s.key)}</td>
-            <td class="iv">${stat(m.ivs,s.key)}</td>
-            <td class="ev">${stat(m.evs,s.key)}</td>
-          </tr>`).join('')}
-        </table>
-      </div>
+<!-- Modal şablonu -->
+<template id="tpl-modal">
+  <button class="close" title="Kapat">✕</button>
+  <div class="m-left">
+    <div class="m-head">
+      <img class="sprite" width="170" height="170" alt="">
+      <div class="name"></div>
+      <div class="lvl"></div>
+      <div class="types"></div>
+      <div class="lvl-extra" style="color:var(--muted);font-size:.85rem;margin-top:4px"></div>
+    </div>
+    <div class="m-total">
+      <div class="lbl">Toplam IV <span class="tvsum"></span> / 186</div>
+      <div class="big"><span class="tv">0</span></div>
+      <div class="bar"><div class="tvbar"></div></div>
+    </div>
+    <div class="info-box"><div class="k">Ability</div><div class="v abl"></div></div>
+    <div class="info-box" style="margin-top:8px"><div class="k">Nature</div><div class="v nat"></div></div>
+    <div class="eff descAbility" style="margin-top:10px;text-align:left"></div>
+    <div class="eff descNature" style="margin-top:8px;text-align:left"></div>
+    <div class="sec">Hamleler</div>
+    <div id="moves"></div>
+  </div>
+  <div class="m-right">
+    <div class="sec">Stat Dağılımı — Lv.100 · IV · EV</div>
+    <div class="statbox">
+      <table>
+        <tr><th>Stat</th><th>Lv.100</th><th>IV</th><th>EV</th></tr>
+        <tbody id="statBody"></tbody>
+      </table>
+    </div>
+    <div class="sec">Base Statlar</div>
+    <div class="statbox" style="opacity:.92">
+      <table>
+        <tr><th>Stat</th><th style="width:58%">Base</th></tr>
+        <tbody id="baseBody"></tbody>
+      </table>
+    </div>
+  </div>
+</template>
 
-      <div class="sec">Base Statlar</div>
-      <div class="statbox" style="opacity:.92">
-        <table>
-          <tr><th>Stat</th><th style="width:58%">Base</th></tr>
-          ${m.base ? baseTableRows(m) : '<tr><td colspan="2" class="na">çekiliyor…</td></tr>'}
-        </table>
-      </div>
-    </div>`;
-}
-
-// Base statları: sırada STAT Dağılımı ile aynı (ATK,DEF,SPD,SPATK,SPDEF,HP); renkler değere göre (en yüksek yeşil→en düşük kırmızı)
-function baseTableRows(m){
-  const vals = STAT_ORDER.map(s=>m.base.stats[s.key]);
-  const sorted = [...vals].sort((a,b)=>b-a);
-  const max = sorted[0];
-  return STAT_ORDER.map((s,i)=>{
-    const v = vals[i];
-    const r = sorted.indexOf(v);
-    const t = vals.length>1 ? r/(vals.length-1) : 0;
-    const hue = 130 - 130*t; // yeşil → kırmızı
-    const color = `hsl(${hue},60%,58%)`;
-    const width = max>0 ? (v/max*100).toFixed(1) : 0;
-    return `
-    <tr>
-      <td style="color:${STAT_COLORS[s.key]}">${s.label}</td>
-      <td>
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="flex:1;height:9px;background:#1a2230;border-radius:5px;overflow:hidden">
-            <div style="width:${width}%;height:100%;background:${color};border-radius:5px"></div>
-          </div>
-          <span style="width:40px;text-align:right;color:#fff">${v}</span>
-        </div>
-      </td>
-    </tr>`;
-  }).join('');
-}
-
-function fillModalDescriptions(m){
-  // Kuyruktan gelmişse renderModal zaten gösterdi; gelmediyse tek istek (promise-cache → çift fetch yok)
-  if(m.abDesc == null){
-    abilityDesc(m.ability).then(d=>{
-      m.abDesc = d;
-      if(modalMon===m) refreshModal(m);
-    }).catch(()=>{ m.abDesc='Açıklama çekilemedi (ağ hatası).'; if(modalMon===m) refreshModal(m); });
-  }
-  if(m.natDesc == null){
-    natureInfo(m.nature).then(ni=>{ m.natureInfo=ni; m.natDesc=natDescOf(ni); })
-    .catch(()=>{ m.natDesc='Açıklama çekilemedi (ağ hatası).'; })
-    .finally(()=>{ if(modalMon===m) refreshModal(m); });
-  }
-  // Base stat + Lv.100 hesabı: yoksa çek/güncelle
-  if(!m.calc){
-    calcMon(m).then(calc=>{
-      if(calc){ m.calc = calc; if(modalMon===m) refreshModal(m); }
-    }).catch(()=>{});
-    if(!m.base){
-      baseStats(m.name).then(b=>{
-        m.base=b; m.types=b.types;
-        if(modalMon===m) refreshModal(m);
-      }).catch(()=>{});
-    }
-  }
-  if(!m.moveMeta){
-    loadMoveMeta(m).then(()=>{ if(m.moveMeta && modalMon===m) refreshModal(m); });
-  }
-}
-function refreshModal(m){
-  if(modalMon!==m) return;
-  const modal = document.getElementById('modal');
-  const scroll = modal.scrollTop;
-  renderModal(m);
-  modal.scrollTop = scroll;
-}
-function pct(v){ return Math.min(100,v); }
-
-/* ---------- ekle akışı ---------- */
-const msg = document.getElementById('msg');
-const statusEl = document.getElementById('status');
-function showMsg(type, text){
-  msg.className = 'msg '+type; msg.textContent = text;
-  setTimeout(()=>msg.className='msg', 5000);
-}
-
-document.getElementById('btnAdd').addEventListener('click', addFromPaste);
-
-document.getElementById('btnClear').addEventListener('click', ()=>{
-  if(!mons.length) return;
-  if(!confirm('Envanterdeki tüm Pokémon\'lar silinecek. Emin misin?')) return;
-  mons.length = 0;
-  render();
-  saveInventory();
-  showMsg('ok','🗑 Envanter boşaltıldı.');
-});
-
-async function addFromPaste(){
-  const text = document.getElementById('paste').value;
-  msg.className='msg';
-  let mon;
-  try{
-    mon = parseMon(text);
-  }catch(err){
-    showMsg('err', '⚠ '+err.message);
-    return;
-  }
-  const tv = totalIV(mon.ivs);
-
-  mon.sprite = spriteURL(mon.name);
-  mon.art    = artURL(mon.name);
-
-  // Kart HEMEN envantere girer; pokemondb verileri arka planda sırayla gelir
-  mons.push(mon);
-  render();
-  saveInventory();
-  showMsg('ok', `✔ ${mon.name} envantere eklendi (IV toplam: ${tv}/186) — detayları arka planda çekiliyor.`);
-  document.getElementById('paste').value='';
-  enqueueDataFetch(mon);
-}
-render();
-loadInventory();
-</script>
+<script type="module" src="js/main.js"></script>
 </body>
 </html>

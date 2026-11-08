@@ -43,7 +43,15 @@ IVs: 15 HP / 27 Atk / 4 Def / 29 SpA / 28 SpD / 11 Spe
 
 ## Yerel Çalıştırma
 
-`index.html`'i tarayıcıda açman yeterlidir — build/adım yok.
+ES modülleri kullanıldığı için `index.html`'i doğrudan çift tıklayarak açmak yerine küçük bir web sunucusu ile çalıştır:
+
+```
+npx serve .
+# veya
+python -m http.server
+```
+
+GitHub Pages / herhangi bir statik host üzerinde doğrudan çalışır.
 
 ## Lisans
 
