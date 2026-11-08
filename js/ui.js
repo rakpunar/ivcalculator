@@ -21,7 +21,7 @@ const API_STAT = { hp:'HP', attack:'Atk', defense:'Def', 'special-attack':'SpA',
 
 function typeChips(types){
   if(!types?.length) return '';
-  return types.map(t => `<span class="type-icon t-${t}" title="${t[0].toUpperCase()+t.slice(1)} type">${t}</span>`).join('');
+  return types.map(t => `<span class="type-icon t-${t}" title="${t[0].toUpperCase()+t.slice(1)} type">${t.toUpperCase()}</span>`).join('');
 }
 
 function setImg(img, primary, fallback){
@@ -135,7 +135,7 @@ function showMoveTip(e, mv, m){
   moveMeta(mv).then(d => {
     if(m.moveMeta) m.moveMeta[mv] = d; else m.moveMeta = {[mv]: d};
     const bits = [
-      `<span class="type-icon t-${d.type}" style="width:auto;padding:1px 7px">${d.type}</span>`,
+      `<span class="type-icon t-${d.type}" style="width:auto;padding:1px 7px">${d.type.toUpperCase()}</span>`,
     ];
     if(CAT_ICON[d.cat]) bits.push(`<img class="caticon" src="${CAT_ICON[d.cat].icon}" width="27" height="18" alt="${CAT_ICON[d.cat].label}" title="${CAT_ICON[d.cat].label}">`);
     bits.push(`Pwr: <b>${d.power ?? '—'}</b>`, `Acc: <b>${d.accuracy ?? '—'}%</b>`, `PP: <b>${d.pp ?? '—'}</b>`);
@@ -173,7 +173,7 @@ function moveChips(m){
   const metas = m.moveMeta || {};
   return `<div class="moves">${m.moves.map(mv=>{
     const mt = metas[mv];
-    const ty  = mt ? `<span class="type-icon t-${mt.type}">${mt.type}</span>` : '';
+    const ty  = mt ? `<span class="type-icon t-${mt.type}">${mt.type.toUpperCase()}</span>` : '';
     const cat = mt && CAT_ICON[mt.cat]
       ? `<img class="caticon" src="${CAT_ICON[mt.cat].icon}" width="27" height="18" alt="${CAT_ICON[mt.cat].label}" title="${CAT_ICON[mt.cat].label}">`
       : (mt ? '' : '<span class="na">…</span>');
