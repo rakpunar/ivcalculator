@@ -1,6 +1,7 @@
 /* Veri kaynakları: 1) PokéAPI (CORS-ok, doğrudan)  2) pokemondb.net (proxy + HTML scrape, fallback)
    Tüm istekler promise-cache'lidir: aynı kaynağa ikinci istek atılmaz. */
-import { slugify, STAT_API_TO_KEY } from './data.js';
+import { STAT_API_TO_KEY } from './data.js';
+import { slugify } from './parser.js';
 
 const PROXY = u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u);
 
