@@ -6,11 +6,11 @@ import { calcMon } from './stats.js';
 export const mons = [];
 
 /* basit event bus */
-const listeners = { grid:[], mon:[], msg:[] };
+const listeners = {};
 function emit(ev, payload){
-  (listeners[ev]||[]).forEach(fn => { try{ fn(payload); }catch(e){ console.error(e); } });
+  (listeners[ev] || []).forEach(fn => { try{ fn(payload); }catch(e){ console.error(e); } });
 }
-export const on = (ev, fn) => listeners[ev].push(fn);
+export const on = (ev, fn) => { (listeners[ev] ??= []).push(fn); };
 function message(type, text){ emit('msg', {type, text}); }
 
 /* ---------- arka plan kuyruğu ---------- */
