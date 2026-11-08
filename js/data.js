@@ -25,19 +25,20 @@ export const STAT_API_TO_KEY = {
   'special-attack':'SpA', 'special-defense':'SpD', speed:'Spe'
 };
 
+/* Tür paleti: pokemondb.net'in resmi .type-icon renkleri (kopya) */
 export const TYPE_COLORS = {
-  normal:'#A8A77A', fire:'#EE8130', water:'#6390F0', electric:'#F7D02C',
-  grass:'#7AC74C',  ice:'#96D9D6', fighting:'#C22E28', poison:'#A33EA1',
-  ground:'#E2BF65', flying:'#A98FF3', psychic:'#F95587', bug:'#A6B91A',
-  rock:'#B6A136',   ghost:'#735797', dragon:'#6F35FC',  dark:'#705746',
-  steel:'#B7B7CE',  fairy:'#D685AD'
+  normal:'#aa9', fire:'#f42', water:'#39f', electric:'#fc3',
+  grass:'#7c5',  ice:'#6cf', fighting:'#b54', poison:'#a59',
+  ground:'#db5', flying:'#89f', psychic:'#f59', bug:'#ab2',
+  rock:'#ba6',   ghost:'#66b', dragon:'#76e',  dark:'#754',
+  steel:'#aab',  fairy:'#e9e'
 };
 
-// Hamle kategorisi rozetleri: fiziksel (ATK) / özel (SP) / durum
-export const CAT_INFO = {
-  physical:{ icon:'⚔', label:'ATK', color:'#e05a5a' },
-  special: { icon:'✨', label:'SP',  color:'#6a86e0' },
-  status:  { icon:'🌀', label:'—',   color:'#8fa0b8' },
+/* Hamle kategorisi: pokemondb.net'in kendi ikonları (30x20 PNG) */
+export const CAT_ICON = {
+  physical:{ icon:'https://img.pokemondb.net/images/icons/move-physical.png', label:'Physical' },
+  special: { icon:'https://img.pokemondb.net/images/icons/move-special.png',  label:'Special'  },
+  status:  { icon:'https://img.pokemondb.net/images/icons/move-status.png',   label:'Status'   },
 };
 
 export const STATS = {

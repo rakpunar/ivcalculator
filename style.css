@@ -49,10 +49,25 @@ button{cursor:pointer;border:none;border-radius:9px;font-weight:600;font-size:.9
   font-size:.82rem;border-radius:8px;padding:3px 10px}
 .ivbadge small{font-weight:500;opacity:.8}
 
-/* Tür rozetleri (kart + modal ortak) */
-.types{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin-top:5px;min-height:18px}
-.type{font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.4px;
-  color:#fff;border-radius:5px;padding:2px 7px}
+/* Tür rozetleri — pokemondb.net .type-icon birebir (renkler onların CSS'inden) */
+.types{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-top:10px;min-height:21px}
+.type-icon{display:inline-block;border:1px solid rgba(0,0,0,.2);border-radius:4px;color:#fff;
+  font-size:.7rem;font-weight:normal;line-height:1.6;text-align:center;text-transform:uppercase;
+  text-shadow:0 1px 1px rgba(0,0,0,.35);padding:0 6px;transition:opacity .4s}
+.type-icon:hover{opacity:.85}
+.t-normal{background-color:#aa9}.t-fire{background-color:#f42}.t-water{background-color:#39f}
+.t-electric{background-color:#fc3}.t-grass{background-color:#7c5}.t-ice{background-color:#6cf}
+.t-fighting{background-color:#b54}.t-poison{background-color:#a59}.t-ground{background-color:#db5}
+.t-flying{background-color:#89f}.t-psychic{background-color:#f59}.t-bug{background-color:#ab2}
+.t-rock{background-color:#ba6}.t-ghost{background-color:#66b}.t-dragon{background-color:#76e}
+.t-dark{background-color:#754}.t-steel{background-color:#aab}.t-fairy{background-color:#e9e}
+.m-head .types{margin-top:8px}
+.m-head .type-icon{font-size:.85rem;padding:2px 10px}
+/* Modal alt bloğu: tabloların altında ortalanmış ability/nature */
+.m-footer{grid-column:1 / -1;text-align:center;color:#cdd8e6;padding-top:10px;
+  border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:6px}
+.m-footer .footerline{font-size:1.02rem;line-height:1.55}
+.caticon{display:inline-block;vertical-align:middle;image-rendering:pixelated}
 
 /* Tooltip */
 .tooltip{position:fixed;z-index:60;max-width:300px;background:#0d1117;border:1px solid var(--accent2);

@@ -141,7 +141,17 @@ export async function moveMeta(name){
   if(movePending[slug]) return movePending[slug];
   movePending[slug] = (async () => {
     const j = await fetchJSON('https://pokeapi.co/api/v2/move/' + slug);
-    moveCache[slug] = { type: j.type.name, cat: j.damage_class.name };
+    const fl = (j.flavor_text_entries || []).filter(e => e.language?.name === 'en');
+    const flavor = fl.at(-1)?.flavor_text?.replace(/[\n\f]/g,' ') || '';
+    moveCache[slug] = {
+      type: j.type.name,
+      cat: j.damage_class.name,
+      power: j.power,
+      accuracy: j.accuracy,
+      pp: j.pp,
+      priority: j.priority ?? 0,
+      desc: flavor,
+    };
     delete movePending[slug];
     return moveCache[slug];
   })();

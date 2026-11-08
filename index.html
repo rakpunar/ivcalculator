@@ -47,13 +47,13 @@
     <button class="del" title="Sil">✕</button>
     <img class="sprite" width="88" height="88" alt="">
     <div class="name"></div>
-    <div class="types"></div>
     <div class="lvl"></div>
     <div class="tiny-rows">
       <div class="tiny-row"><span>Ability</span><span class="tip ability"></span></div>
       <div class="tiny-row"><span>IV Toplam</span><span class="iv-sum"></span></div>
     </div>
     <div class="ivbadge" title="IV toplamı (max 186)"><span class="tv">0</span> <small>IV</small></div>
+    <div class="types"></div>
   </div>
 </template>
 
@@ -65,18 +65,14 @@
       <img class="sprite" width="170" height="170" alt="">
       <div class="name"></div>
       <div class="lvl"></div>
-      <div class="types"></div>
       <div class="lvl-extra" style="color:var(--muted);font-size:.85rem;margin-top:4px"></div>
     </div>
     <div class="m-total">
       <div class="lbl">Toplam IV <span class="tvsum"></span> / 186</div>
       <div class="big"><span class="tv">0</span></div>
       <div class="bar"><div class="tvbar"></div></div>
+      <div class="types"></div>
     </div>
-    <div class="info-box"><div class="k">Ability</div><div class="v abl"></div></div>
-    <div class="info-box" style="margin-top:8px"><div class="k">Nature</div><div class="v nat"></div></div>
-    <div class="eff descAbility" style="margin-top:10px;text-align:left"></div>
-    <div class="eff descNature" style="margin-top:8px;text-align:left"></div>
     <div class="sec">Hamleler</div>
     <div id="moves"></div>
   </div>
@@ -95,6 +91,10 @@
         <tbody id="baseBody"></tbody>
       </table>
     </div>
+  </div>
+  <div class="m-footer">
+    <div class="footerline fAbility"><b>Ability:</b> <span class="fad">yükleniyor…</span></div>
+    <div class="footerline fNature"><b>Nature:</b> <span class="fnd">yükleniyor…</span></div>
   </div>
 </template>
 

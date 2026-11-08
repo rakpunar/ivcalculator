@@ -1,6 +1,6 @@
 /* UI: envanter grid (template), modal (template), tooltip, mesajlar */
-import { STAT_ORDER, STAT_COLORS, STATS, TYPE_COLORS, CAT_INFO } from './data.js';
-import { abilityDesc, natureDesc, baseStats } from './api.js';
+import { STAT_ORDER, STAT_COLORS, STATS, CAT_ICON } from './data.js';
+import { abilityDesc, natureDesc, baseStats, moveMeta } from './api.js';
 import { calcMon } from './stats.js';
 import { mons, on } from './state.js';
 
@@ -21,7 +21,7 @@ const API_STAT = { hp:'HP', attack:'Atk', defense:'Def', 'special-attack':'SpA',
 
 function typeChips(types){
   if(!types?.length) return '';
-  return types.map(t => `<span class="type" style="background:${TYPE_COLORS[t]||'#666'}">${t}</span>`).join('');
+  return types.map(t => `<span class="type-icon t-${t}" title="${t[0].toUpperCase()+t.slice(1)} type">${t}</span>`).join('');
 }
 
 function setImg(img, primary, fallback){
@@ -88,12 +88,6 @@ function renderModal(m){
   root.querySelector('.tv').textContent = tv(m);
   root.querySelector('.tvsum').textContent = tv(m);
   root.querySelector('.tvbar').style.width = (tv(m)/186*100).toFixed(1) + '%';
-  root.querySelector('.abl').textContent = m.ability;
-  root.querySelector('.nat').textContent = m.nature;
-  root.querySelector('.descAbility').innerHTML = m.abDesc != null
-    ? `<span class="abl">${esc(m.ability)}:</span> ${esc(m.abDesc)}` : 'yükleniyor…';
-  root.querySelector('.descNature').innerHTML = m.natDesc != null
-    ? `${esc(m.nature)} — ${esc(m.natDesc)}` : 'yükleniyor…';
 
   // Stat dağılımı tablosu
   const ascKey = m.natureInfo?.inc, dscKey = m.natureInfo?.dec;
@@ -114,12 +108,41 @@ function renderModal(m){
   // Hamleler
   root.querySelector('#moves').innerHTML = moveChips(m);
 
+  // Alt orta blok: ability + nature adı/açıklaması (hamleler ve base statların altında, ortalanmış)
+  root.querySelector('.fAbility').innerHTML =
+    `<b>Ability:</b> <span class="abl">${esc(m.ability)}</span> — ${m.abDesc != null ? esc(m.abDesc) : 'yükleniyor…'}`;
+  root.querySelector('.fNature').innerHTML =
+    `<b>Nature:</b> <b>${esc(m.nature)}</b> — ${m.natDesc != null ? esc(m.natDesc) : 'yükleniyor…'}`;
+
   modal.innerHTML = '';
   modal.appendChild(root);
   modal.querySelector('.close').addEventListener('click', closeModal);
 
+  // Hamle tooltip'leri
+  modal.querySelectorAll('.movechip').forEach(chip => {
+    chip.addEventListener('mouseenter', e => showMoveTip(e, chip.dataset.move, m));
+    chip.addEventListener('mouseleave', hideTip);
+  });
+
   // eksik veriyi arka planda çek, gelince tekrar çiz
   fetchModalData(m);
+}
+
+/* Hamle tooltip: tür + kategori ikonu + Power/Acc/PP + açıklama */
+function showMoveTip(e, mv, m){
+  tooltip.innerHTML = `<b>${esc(mv)}</b><br><span class="skel">Yükleniyor…</span>`;
+  placeTip(e);
+  moveMeta(mv).then(d => {
+    if(m.moveMeta) m.moveMeta[mv] = d; else m.moveMeta = {[mv]: d};
+    const bits = [
+      `<span class="type-icon t-${d.type}" style="width:auto;padding:1px 7px">${d.type}</span>`,
+    ];
+    if(CAT_ICON[d.cat]) bits.push(`<img class="caticon" src="${CAT_ICON[d.cat].icon}" width="27" height="18" alt="${CAT_ICON[d.cat].label}" title="${CAT_ICON[d.cat].label}">`);
+    bits.push(`Pwr: <b>${d.power ?? '—'}</b>`, `Acc: <b>${d.accuracy ?? '—'}%</b>`, `PP: <b>${d.pp ?? '—'}</b>`);
+    tooltip.innerHTML = `
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:5px">${bits.join('')}</div>
+      <b>${esc(mv)}</b><br>${esc(d.desc || 'Açıklama bulunamadı.')}`;
+  }).catch(() => { tooltip.innerHTML = `<b>${esc(mv)}</b><br><i>Bilgi çekilemedi.</i>`; });
 }
 
 // Base statlar: sırada Stat Dağılımı ile aynı; renk değere göre (en yüksek yeşil → en düşük kırmızı)
@@ -150,11 +173,11 @@ function moveChips(m){
   const metas = m.moveMeta || {};
   return `<div class="moves">${m.moves.map(mv=>{
     const mt = metas[mv];
-    const ty = mt ? `<span class="ty" style="background:${TYPE_COLORS[mt.type]||'#666'}">${mt.type}</span>` : '';
-    const cat = mt && CAT_INFO[mt.cat]
-      ? `<span class="cat" style="color:${CAT_INFO[mt.cat].color}">${CAT_INFO[mt.cat].icon} ${CAT_INFO[mt.cat].label}</span>`
+    const ty  = mt ? `<span class="type-icon t-${mt.type}">${mt.type}</span>` : '';
+    const cat = mt && CAT_ICON[mt.cat]
+      ? `<img class="caticon" src="${CAT_ICON[mt.cat].icon}" width="27" height="18" alt="${CAT_ICON[mt.cat].label}" title="${CAT_ICON[mt.cat].label}">`
       : (mt ? '' : '<span class="na">…</span>');
-    return `<span class="movechip">${ty}${cat}<span>${esc(mv)}</span></span>`;
+    return `<span class="movechip" data-move="${esc(mv)}">${ty}${cat}<span>${esc(mv)}</span></span>`;
   }).join('')}</div>`;
 }
 
