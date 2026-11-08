@@ -145,14 +145,14 @@ function showMoveTip(e, mv, m){
   }).catch(() => { tooltip.innerHTML = `<b>${esc(mv)}</b><br><i>Bilgi çekilemedi.</i>`; });
 }
 
-// Base statlar: sırada Stat Dağılımı ile aynı; renk değere göre (en yüksek yeşil → en düşük kırmızı)
+// Base statlar: sırada Stat Dağılımı ile aynı; renk Pokémon'un kendi değer sırasına göre (yeşil→kırmızı)
 function baseTableRows(m){
   const vals = STAT_ORDER.map(s=>m.base.stats[s.key]);
   const sorted = [...vals].sort((a,b)=>b-a);
-  const max = sorted[0];
+  const MAX_BASE = 255; // barın uzunluğu her zaman tür üst sınırına göre
   return STAT_ORDER.map((s,i)=>{
     const v = vals[i];
-    const width = max>0 ? (v/max*100).toFixed(1) : 0;
+    const width = Math.min(100, (v/MAX_BASE*100)).toFixed(1);
     return `
     <tr>
       <td style="color:${STAT_COLORS[s.key]}">${s.label}</td>
