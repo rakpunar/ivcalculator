@@ -46,7 +46,7 @@ const seg = (name, items, val) => `<div class="seg" role="radiogroup">${items.ma
 const pick = (cls, items, val) => `<select class="pick ${cls}">${items.map(v =>
   `<option value="${v}"${v === val ? ' selected' : ''}>${esc(pretty(v))}</option>`).join('')}</select>`;
 
-function ctrlHTML(m, i){
+function ctrlHTML(m, i){ // i: radyo grup adı eki (kart indeksi veya 'M' = modal)
   if(!m.opts) return '<span class="na">…</span>';
   const o = m.opts, v = m.view, st = effStage(m);
   const stages = [{ v:'current', t:'Current' },
@@ -113,6 +113,16 @@ function renderToolbar(){
     seg('bulk-mg', [{ v:'off', t:'Normal' }, { v:'on', t:'Mega' }], mgv);
 }
 
+/* kart ve modaldaki ortak kontroller (seviye / evrim / mega / form) */
+function handleCtrl(m, t){
+  if(t.name?.startsWith('lv')) setView(m, { lvl100: t.value === '100' });
+  else if(t.name?.startsWith('st')) setView(m, { stage: t.value });
+  else if(t.name?.startsWith('mg')) setView(m, { mega: t.value === 'on' });
+  else if(t.classList.contains('pk-form'))  setView(m, { form: t.value });
+  else if(t.classList.contains('pk-final')) setView(m, { finalPick: t.value });
+  else if(t.classList.contains('pk-mega'))  setView(m, { megaPick: t.value });
+}
+
 function initToolbar(){
   $('#btnSelAll').addEventListener('click',  () => selectAll(() => true));
   $('#btnSelNone').addEventListener('click', () => selectAll(() => false));
@@ -125,15 +135,11 @@ function initToolbar(){
   // kart içi kontroller (event delegation; kartlar her çizimde yenilenir)
   grid.addEventListener('change', e => {
     const card = e.target.closest('.card'); if(!card) return;
-    const m = mons[+card.dataset.i], t = e.target;
-    if(t.closest('.sel')) setSel(m, t.checked);
-    else if(t.name?.startsWith('lv')) setView(m, { lvl100: t.value === '100' });
-    else if(t.name?.startsWith('st')) setView(m, { stage: t.value });
-    else if(t.name?.startsWith('mg')) setView(m, { mega: t.value === 'on' });
-    else if(t.classList.contains('pk-form'))  setView(m, { form: t.value });
-    else if(t.classList.contains('pk-final')) setView(m, { finalPick: t.value });
-    else if(t.classList.contains('pk-mega'))  setView(m, { megaPick: t.value });
+    const m = mons[+card.dataset.i];
+    if(e.target.closest('.sel')) setSel(m, e.target.checked);
+    else handleCtrl(m, e.target);
   });
+  modal.addEventListener('change', e => { if(modalMon) handleCtrl(modalMon, e.target); });
 }
 
 /* ---------- modal ---------- */
@@ -160,6 +166,7 @@ function renderModal(m){
   root.querySelector('.lvl').textContent = `Lv. ${m.view.lvl100 ? 100 : (m.level ?? '?')}`;
   root.querySelector('.secstats').textContent = `Stats — Lv.${effLevel(m)} · IV · EV`;
   root.querySelector('.thlv').textContent = `Lv.${effLevel(m)}`;
+  root.querySelector('.m-ctrl').innerHTML = ctrlHTML(m, 'M');
   root.querySelector('.lvl-extra').textContent = m.tera ? 'Tera: ' + m.tera : '';
   setImg(root.querySelector('img'), m.art, m.sprite);
   root.querySelector('.tv').textContent = tv(m);

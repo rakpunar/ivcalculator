@@ -153,7 +153,7 @@ button{cursor:pointer;border:none;border-radius:9px;font-weight:600;font-size:.9
 .seg label.dis input{cursor:not-allowed}
 
 /* Kart: kontroller, seçim, mega etiketi, form seçici */
-.card .ctrl{margin-top:9px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:default}
+.card .ctrl,.m-ctrl{margin-top:9px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:default}
 .pick{width:100%;background:#10151d;color:var(--text);border:1px solid var(--border);border-radius:8px;
   font-size:.74rem;padding:4px 6px;font-family:inherit;cursor:pointer}
 .pick:focus-visible{outline:2px solid var(--accent2)}
@@ -171,3 +171,7 @@ button{cursor:pointer;border:none;border-radius:9px;font-weight:600;font-size:.9
 .card .sel input:checked+span::after{content:"";display:block;width:5px;height:10px;margin:1px 0 0 5px;
   border:solid #10151d;border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
 .card .sel input:focus-visible+span{outline:2px solid var(--accent);outline-offset:1px}
+
+.m-ctrl{flex-direction:row;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.m-ctrl .seg span{font-size:.8rem;padding:4px 11px}
+.m-ctrl .pick{width:auto;min-width:140px;font-size:.82rem}
