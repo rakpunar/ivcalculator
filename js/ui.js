@@ -2,7 +2,7 @@
 import { STAT_ORDER, STAT_COLORS, STATS, CAT_ICON } from './data.js';
 import { abilityDesc, natureDesc, moveMeta } from './api.js';
 import { calcMon, effLevel } from './stats.js';
-import { mons, on, setView, bulkView, stageAvailable, setSel, selectAll, refreshView } from './state.js';
+import { mons, on, setView, bulkView, stageAvailable, megaAvailable, setSel, selectAll, refreshView } from './state.js';
 
 const $  = sel => document.querySelector(sel);
 const grid = $('#grid');
@@ -38,6 +38,7 @@ function colorForValue(v, sorted){
 /* ---------- grid ---------- */
 const pretty = slug => slug.replace(/-/g,' ').replace(/\b\w/g, c => c.toUpperCase());
 const effStage = m => stageAvailable(m, m.view.stage) ? m.view.stage : 'current';
+const isMega  = m => !!m.view.mega && !!m.opts?.hasMega;
 
 /* Segmented radio: gizli input + stilize span (klavye/erişilebilirlik korunur) */
 const seg = (name, items, val) => `<div class="seg" role="radiogroup">${items.map(o =>
@@ -50,11 +51,11 @@ function ctrlHTML(m, i){
   const o = m.opts, v = m.view, st = effStage(m);
   const stages = [{ v:'current', t:'Current' },
     { v:'final', t:'Final', dis:!o.finals.length, title:o.finals.length ? 'Show final evolution' : 'No further evolution' }];
-  if(o.hasMega) stages.push({ v:'mega', t:'Mega', title:'Show Mega Evolution' });
   let h = seg('lv' + i, [{ v:'cur', t:'Lv. ' + (m.level ?? '?') }, { v:'100', t:'Lv. 100' }], v.lvl100 ? '100' : 'cur')
         + seg('st' + i, stages, st);
-  if(st === 'final' && o.finals.length > 1) h += pick('pk-final', o.finals, v.finalPick ?? o.finals[0]);
-  if(st === 'mega'  && o.megas.length  > 1) h += pick('pk-mega',  o.megas,  v.megaPick  ?? o.megas[0]);
+  if(o.hasMega) h += seg('mg' + i, [{ v:'off', t:'Normal' }, { v:'on', t:'Mega' }], v.mega ? 'on' : 'off');
+  if(st === 'final' && !v.mega && o.finals.length > 1) h += pick('pk-final', o.finals, v.finalPick ?? o.finals[0]);
+  if(v.mega && o.megas.length > 1) h += pick('pk-mega', o.megas, v.megaPick ?? o.megas[0]);
   if(o.forms.length > 1) h += pick('pk-form', o.forms, o.curForm);
   return h;
 }
@@ -72,7 +73,7 @@ export function renderGrid(){
     node.querySelector('.iv-sum').textContent = `${tv(m)} / 186`;
     node.querySelector('.ivbadge .tv').textContent = tv(m);
     node.querySelector('.types').innerHTML = typeChips(m.types);
-    if(m.opts?.hasMega) node.querySelector('.tags').innerHTML = effStage(m) === 'mega'
+    if(m.opts?.hasMega) node.querySelector('.tags').innerHTML = isMega(m)
       ? '<span class="tag mega on" title="Showing Mega Evolution">MEGA</span>'
       : '<span class="tag mega" title="This Pokémon has a Mega Evolution">★ Mega available</span>';
     node.querySelector('.ctrl').innerHTML = ctrlHTML(m, i);
@@ -103,10 +104,13 @@ function renderToolbar(){
   const lv = all(m => m.view.lvl100) ? '100' : all(m => !m.view.lvl100) ? 'cur' : '';
   const stageOn = s => { const ap = mons.filter(m => stageAvailable(m, s));
     return ap.length > 0 && ap.every(m => effStage(m) === s); };
-  const st = ['current','final','mega'].find(stageOn) ?? '';
+  const st = ['current','final'].find(stageOn) ?? '';
+  const mg = mons.filter(megaAvailable);
+  const mgv = !mg.length ? '' : mg.every(isMega) ? 'on' : mg.every(m => !isMega(m)) ? 'off' : '';
   $('#bulk').innerHTML = `<span class="tb-lbl">${sel.length ? 'Selected' : 'All'}:</span>` +
     seg('bulk-lv', [{ v:'cur', t:'Current Lv.' }, { v:'100', t:'Lv. 100' }], lv) +
-    seg('bulk-st', [{ v:'current', t:'Current' }, { v:'final', t:'Final' }, { v:'mega', t:'Mega' }], st);
+    seg('bulk-st', [{ v:'current', t:'Current' }, { v:'final', t:'Final' }], st) +
+    seg('bulk-mg', [{ v:'off', t:'Normal' }, { v:'on', t:'Mega' }], mgv);
 }
 
 function initToolbar(){
@@ -116,6 +120,7 @@ function initToolbar(){
   $('#bulk').addEventListener('change', e => {
     if(e.target.name === 'bulk-lv') bulkView({ lvl100: e.target.value === '100' });
     else if(e.target.name === 'bulk-st') bulkView({ stage: e.target.value });
+    else if(e.target.name === 'bulk-mg') bulkView({ mega: e.target.value === 'on' }); // sadece mega'sı olanlara
   });
   // kart içi kontroller (event delegation; kartlar her çizimde yenilenir)
   grid.addEventListener('change', e => {
@@ -124,6 +129,7 @@ function initToolbar(){
     if(t.closest('.sel')) setSel(m, t.checked);
     else if(t.name?.startsWith('lv')) setView(m, { lvl100: t.value === '100' });
     else if(t.name?.startsWith('st')) setView(m, { stage: t.value });
+    else if(t.name?.startsWith('mg')) setView(m, { mega: t.value === 'on' });
     else if(t.classList.contains('pk-form'))  setView(m, { form: t.value });
     else if(t.classList.contains('pk-final')) setView(m, { finalPick: t.value });
     else if(t.classList.contains('pk-mega'))  setView(m, { megaPick: t.value });

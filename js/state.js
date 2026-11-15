@@ -5,7 +5,7 @@ import { calcMon } from './stats.js';
 
 export const mons = [];
 
-const DEFAULT_VIEW = { lvl100:false, stage:'current', form:null, finalPick:null, megaPick:null };
+const DEFAULT_VIEW = { lvl100:false, stage:'current', mega:false, form:null, finalPick:null, megaPick:null };
 
 /* basit event bus */
 const listeners = {};
@@ -85,15 +85,13 @@ export function bulkView(patch){
   const sel = mons.filter(m => m.sel);
   (sel.length ? sel : mons).forEach(m => {
     const p = { ...patch };
-    if(!stageAvailable(m, p.stage)) delete p.stage;
+    if('stage' in p && !stageAvailable(m, p.stage)) delete p.stage;
+    if(p.mega && !megaAvailable(m)) delete p.mega;
     if(Object.keys(p).length) setView(m, p);
   });
 }
-export function stageAvailable(m, stage){
-  if(stage === 'final') return !m.opts || m.opts.finals.length > 0;
-  if(stage === 'mega')  return !m.opts || m.opts.hasMega;
-  return true;
-}
+export const stageAvailable = (m, stage) => stage !== 'final' || !m.opts || m.opts.finals.length > 0;
+export const megaAvailable  = m => !m.opts || m.opts.hasMega;
 
 /* ---------- seçim ---------- */
 export function setSel(mon, v){ mon.sel = v; saveInventory(); emit('grid'); }
@@ -140,7 +138,9 @@ export function loadInventory(){
   try{ data = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); }catch(e){}
   if(!Array.isArray(data)) return;
   data.forEach(d => {
-    mons.push(Object.assign({ evs:{}, ivs:{}, moves:[], loading:true }, d, { view:{ ...DEFAULT_VIEW, ...d.view } }));
+    const view = { ...DEFAULT_VIEW, ...d.view };
+    if(view.stage === 'mega'){ view.stage = 'current'; view.mega = true; } // eski kayıt göçü
+    mons.push(Object.assign({ evs:{}, ivs:{}, moves:[], loading:true }, d, { view }));
   });
   if(mons.length) message('ok', `✔ ${mons.length} Pokémon restored from browser storage.`);
   emit('grid');

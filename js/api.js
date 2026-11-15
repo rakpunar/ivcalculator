@@ -121,7 +121,7 @@ const speciesInfo = slug => cached(infoCache, slug, async () => {
 });
 
 /** mon.view'a göre gösterilecek Pokémon'u çözer.
- *  view = {stage:'current'|'final'|'mega', form, finalPick, megaPick, lvl100}
+ *  view = {stage:'current'|'final', mega:bool, form, finalPick, megaPick, lvl100}
  *  döner {slug, label, base, opts:{forms, finals, megas, hasMega}} */
 export async function resolveView(mon){
   const own = slugify(mon.name), v = mon.view;
@@ -138,7 +138,8 @@ export async function resolveView(mon){
     const suffix = form.startsWith(self.name) ? form.slice(self.name.length) : '';
     slug = forms2.includes(v.form) ? v.form
          : suffix && forms2.includes(pickFinal.name + suffix) ? pickFinal.name + suffix : pickFinal.def;
-  } else if(v.stage === 'mega' && megaSp){
+  }
+  if(v.mega && megaSp){ // mega, evrim aşamasından bağımsız ek seçim; hattın mega'sı varsa onu gösterir
     forms2 = []; // mega'da form seçici yok
     slug = megaSp.megas.includes(v.megaPick) ? v.megaPick : megaSp.megas[0];
   }
