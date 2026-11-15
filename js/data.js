@@ -34,11 +34,13 @@ export const TYPE_COLORS = {
   steel:'#aab',  fairy:'#e9e'
 };
 
-/* Hamle kategorisi: pokemondb.net'in kendi ikonları (30x20 PNG) */
+/* Hamle kategorisi: yerel inline SVG ikonlar (dış bağımlılık yok) */
+const svgIcon = (bg, shape) => 'data:image/svg+xml,' + encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 27 18"><rect width="27" height="18" rx="4" fill="${bg}"/>${shape}</svg>`);
 export const CAT_ICON = {
-  physical:{ icon:'https://img.pokemondb.net/images/icons/move-physical.png', label:'Physical' },
-  special: { icon:'https://img.pokemondb.net/images/icons/move-special.png',  label:'Special'  },
-  status:  { icon:'https://img.pokemondb.net/images/icons/move-status.png',   label:'Status'   },
+  physical:{ icon:svgIcon('#c92112','<path d="M13.5 2l2.4 5.1 5.6.7-4.1 3.9 1 5.5-4.9-2.7-4.9 2.7 1-5.5-4.1-3.9 5.6-.7z" fill="#ffd34d"/>'), label:'Physical' },
+  special: { icon:svgIcon('#4f5fb0','<circle cx="13.5" cy="9" r="6" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="13.5" cy="9" r="2.4" fill="#fff"/>'), label:'Special' },
+  status:  { icon:svgIcon('#8c888c','<path d="M5 9h17M5 5h17M5 13h17" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>'), label:'Status' },
 };
 
 export const STATS = {

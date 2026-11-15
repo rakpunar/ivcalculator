@@ -1,8 +1,8 @@
 /* UI: envanter grid (template), modal (template), tooltip, mesajlar */
 import { STAT_ORDER, STAT_COLORS, STATS, CAT_ICON } from './data.js';
-import { abilityDesc, natureDesc, baseStats, moveMeta } from './api.js';
-import { calcMon } from './stats.js';
-import { mons, on } from './state.js';
+import { abilityDesc, natureDesc, moveMeta } from './api.js';
+import { calcMon, effLevel } from './stats.js';
+import { mons, on, setView, bulkView, stageAvailable, setSel, selectAll, refreshView } from './state.js';
 
 const $  = sel => document.querySelector(sel);
 const grid = $('#grid');
@@ -25,8 +25,8 @@ function typeChips(types){
 }
 
 function setImg(img, primary, fallback){
-  img.onerror = () => { img.onerror = null; img.src = fallback; };
-  img.src = primary;
+  img.onerror = () => { img.onerror = null; img.src = fallback || ''; };
+  img.src = primary || fallback || '';
 }
 
 function colorForValue(v, sorted){
@@ -36,6 +36,29 @@ function colorForValue(v, sorted){
 }
 
 /* ---------- grid ---------- */
+const pretty = slug => slug.replace(/-/g,' ').replace(/\b\w/g, c => c.toUpperCase());
+const effStage = m => stageAvailable(m, m.view.stage) ? m.view.stage : 'current';
+
+/* Segmented radio: gizli input + stilize span (klavye/erişilebilirlik korunur) */
+const seg = (name, items, val) => `<div class="seg" role="radiogroup">${items.map(o =>
+  `<label${o.dis ? ' class="dis"' : ''} title="${esc(o.title || '')}"><input type="radio" name="${name}" value="${o.v}"${o.v === val ? ' checked' : ''}${o.dis ? ' disabled' : ''}><span>${o.t}</span></label>`).join('')}</div>`;
+const pick = (cls, items, val) => `<select class="pick ${cls}">${items.map(v =>
+  `<option value="${v}"${v === val ? ' selected' : ''}>${esc(pretty(v))}</option>`).join('')}</select>`;
+
+function ctrlHTML(m, i){
+  if(!m.opts) return '<span class="na">…</span>';
+  const o = m.opts, v = m.view, st = effStage(m);
+  const stages = [{ v:'current', t:'Current' },
+    { v:'final', t:'Final', dis:!o.finals.length, title:o.finals.length ? 'Show final evolution' : 'No further evolution' }];
+  if(o.hasMega) stages.push({ v:'mega', t:'Mega', title:'Show Mega Evolution' });
+  let h = seg('lv' + i, [{ v:'cur', t:'Lv. ' + (m.level ?? '?') }, { v:'100', t:'Lv. 100' }], v.lvl100 ? '100' : 'cur')
+        + seg('st' + i, stages, st);
+  if(st === 'final' && o.finals.length > 1) h += pick('pk-final', o.finals, v.finalPick ?? o.finals[0]);
+  if(st === 'mega'  && o.megas.length  > 1) h += pick('pk-mega',  o.megas,  v.megaPick  ?? o.megas[0]);
+  if(o.forms.length > 1) h += pick('pk-form', o.forms, o.curForm);
+  return h;
+}
+
 export function renderGrid(){
   $('#count').textContent = mons.length;
   const slot = $('#emptySlot'); slot.remove();
@@ -43,22 +66,68 @@ export function renderGrid(){
   mons.forEach((m,i)=>{
     const node = $('#tpl-card').content.firstElementChild.cloneNode(true);
     node.dataset.i = i;
-    node.querySelector('.name').textContent = m.name + (m.loading ? ' ⏳' : '');
-    node.querySelector('.lvl').textContent = `Lv. ${m.level ?? '?'} · ${m.nature} Nature`;
+    node.querySelector('.name').textContent = (m.eff?.label ?? m.name) + (m.loading ? ' ⏳' : '');
+    node.querySelector('.lvl').textContent = `Lv. ${m.view.lvl100 ? 100 : (m.level ?? '?')} · ${m.nature} Nature`;
     node.querySelector('.ability').textContent = m.ability;
     node.querySelector('.iv-sum').textContent = `${tv(m)} / 186`;
     node.querySelector('.ivbadge .tv').textContent = tv(m);
     node.querySelector('.types').innerHTML = typeChips(m.types);
+    if(m.opts?.hasMega) node.querySelector('.tags').innerHTML = effStage(m) === 'mega'
+      ? '<span class="tag mega on" title="Showing Mega Evolution">MEGA</span>'
+      : '<span class="tag mega" title="This Pokémon has a Mega Evolution">★ Mega available</span>';
+    node.querySelector('.ctrl').innerHTML = ctrlHTML(m, i);
+    node.classList.toggle('picked', !!m.sel);
+    node.querySelector('.sel input').checked = !!m.sel;
     setImg(node.querySelector('img'), m.sprite, m.art);
     node.querySelector('.del').addEventListener('click', e => { e.stopPropagation(); removeMonRef(i); });
     node.querySelector('.lvl').addEventListener('mouseenter', e => showNatureTip(e, m));
     node.querySelector('.lvl').addEventListener('mouseleave', hideTip);
     node.querySelector('.ability').addEventListener('mouseenter', e => showAbilityTip(e, m));
     node.querySelector('.ability').addEventListener('mouseleave', hideTip);
-    node.addEventListener('click', () => openModal(m));
+    node.addEventListener('click', e => { if(!e.target.closest('.ctrl,.sel,.del')) openModal(m); });
     grid.appendChild(node);
   });
   grid.appendChild(slot);
+  renderToolbar();
+}
+
+/* Toplu kontroller + IV toplamları */
+function renderToolbar(){
+  const n = mons.length, sel = mons.filter(m => m.sel);
+  const sum = list => list.reduce((s,m) => s + tv(m), 0);
+  $('#totals').innerHTML =
+    `<span>List total IV <b>${sum(mons)}</b> <small>/ ${n*186} · ${n} Pokémon</small></span>` +
+    `<span>Selected total IV <b>${sum(sel)}</b> <small>/ ${sel.length*186} · ${sel.length} selected</small></span>`;
+
+  const all = fn => n > 0 && mons.every(fn);
+  const lv = all(m => m.view.lvl100) ? '100' : all(m => !m.view.lvl100) ? 'cur' : '';
+  const stageOn = s => { const ap = mons.filter(m => stageAvailable(m, s));
+    return ap.length > 0 && ap.every(m => effStage(m) === s); };
+  const st = ['current','final','mega'].find(stageOn) ?? '';
+  $('#bulk').innerHTML = `<span class="tb-lbl">${sel.length ? 'Selected' : 'All'}:</span>` +
+    seg('bulk-lv', [{ v:'cur', t:'Current Lv.' }, { v:'100', t:'Lv. 100' }], lv) +
+    seg('bulk-st', [{ v:'current', t:'Current' }, { v:'final', t:'Final' }, { v:'mega', t:'Mega' }], st);
+}
+
+function initToolbar(){
+  $('#btnSelAll').addEventListener('click',  () => selectAll(() => true));
+  $('#btnSelNone').addEventListener('click', () => selectAll(() => false));
+  $('#btnSelInv').addEventListener('click',  () => selectAll(m => !m.sel));
+  $('#bulk').addEventListener('change', e => {
+    if(e.target.name === 'bulk-lv') bulkView({ lvl100: e.target.value === '100' });
+    else if(e.target.name === 'bulk-st') bulkView({ stage: e.target.value });
+  });
+  // kart içi kontroller (event delegation; kartlar her çizimde yenilenir)
+  grid.addEventListener('change', e => {
+    const card = e.target.closest('.card'); if(!card) return;
+    const m = mons[+card.dataset.i], t = e.target;
+    if(t.closest('.sel')) setSel(m, t.checked);
+    else if(t.name?.startsWith('lv')) setView(m, { lvl100: t.value === '100' });
+    else if(t.name?.startsWith('st')) setView(m, { stage: t.value });
+    else if(t.classList.contains('pk-form'))  setView(m, { form: t.value });
+    else if(t.classList.contains('pk-final')) setView(m, { finalPick: t.value });
+    else if(t.classList.contains('pk-mega'))  setView(m, { megaPick: t.value });
+  });
 }
 
 /* ---------- modal ---------- */
@@ -81,8 +150,10 @@ function renderModal(m){
   const root = $('#tpl-modal').content.cloneNode(true);
 
   root.querySelector('.types').innerHTML = typeChips(m.types) || '<span class="na">loading types…</span>';
-  root.querySelector('.name').textContent = m.name;
-  root.querySelector('.lvl').textContent = `Lv. ${m.level ?? '?'}`;
+  root.querySelector('.name').textContent = m.eff?.label ?? m.name;
+  root.querySelector('.lvl').textContent = `Lv. ${m.view.lvl100 ? 100 : (m.level ?? '?')}`;
+  root.querySelector('.secstats').textContent = `Stats — Lv.${effLevel(m)} · IV · EV`;
+  root.querySelector('.thlv').textContent = `Lv.${effLevel(m)}`;
   root.querySelector('.lvl-extra').textContent = m.tera ? 'Tera: ' + m.tera : '';
   setImg(root.querySelector('img'), m.art, m.sprite);
   root.querySelector('.tv').textContent = tv(m);
@@ -199,10 +270,7 @@ function fetchModalData(m){
       .catch(() => { if(modalMon===m) renderModal(m); });
   }
   if(!m.base){
-    baseStats(m.name).then(b => {
-      m.base = b; m.types = b.types;
-      if(modalMon===m) renderModal(m);
-    }).catch(() => {});
+    refreshView(m).then(() => { if(modalMon===m) renderModal(m); }).catch(() => {});
   }
 }
 
@@ -254,6 +322,7 @@ export function initUI({ remove, clearAll }){
   overlay.addEventListener('click', e => { if(e.target === overlay) closeModal(); });
   document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal(); });
 
+  initToolbar();
   on('grid', renderGrid);   // envanter değişince yeniden çiz
   on('mon',  mon => { if(modalMon === mon) renderModal(mon); }); // kuyruktan veri gelince modal güncellenir
   on('msg',  showMessage);

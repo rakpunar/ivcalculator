@@ -128,3 +128,46 @@ button{cursor:pointer;border:none;border-radius:9px;font-weight:600;font-size:.9
 @media(max-width:900px){
   .modal{grid-template-columns:1fr;overflow-y:auto}
 }
+
+/* Toolbar: seçim + toplu görünüm */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px 18px;justify-content:space-between;align-items:center;margin-bottom:10px}
+.tb-group{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tb-lbl{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.mini{background:var(--panel2);color:var(--text);border:1px solid var(--border);font-size:.74rem;padding:5px 10px;border-radius:8px}
+.mini:hover{border-color:var(--accent2);color:var(--accent2)}
+.totals{display:flex;flex-wrap:wrap;gap:6px 22px;background:rgba(0,0,0,.25);border:1px solid var(--border);
+  border-radius:10px;padding:8px 12px;margin-bottom:14px;font-size:.85rem;color:var(--muted)}
+.totals b{color:var(--accent);font-size:1.05rem;margin:0 3px}
+.totals small{color:var(--muted)}
+
+/* Segmented radio (gizli input + stilize span) */
+.seg{display:inline-flex;background:#10151d;border:1px solid var(--border);border-radius:9px;padding:2px;gap:2px}
+.seg label{position:relative;cursor:pointer}
+.seg input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.seg span{display:block;padding:3px 9px;border-radius:7px;font-size:.7rem;font-weight:600;color:var(--muted);
+  white-space:nowrap;transition:.15s;user-select:none}
+.seg label:hover span{color:var(--text)}
+.seg input:checked+span{background:var(--accent);color:#232323}
+.seg input:focus-visible+span{outline:2px solid var(--accent2);outline-offset:1px}
+.seg label.dis{cursor:not-allowed;opacity:.4}
+.seg label.dis input{cursor:not-allowed}
+
+/* Kart: kontroller, seçim, mega etiketi, form seçici */
+.card .ctrl{margin-top:9px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:default}
+.pick{width:100%;background:#10151d;color:var(--text);border:1px solid var(--border);border-radius:8px;
+  font-size:.74rem;padding:4px 6px;font-family:inherit;cursor:pointer}
+.pick:focus-visible{outline:2px solid var(--accent2)}
+.card .tags{margin-top:5px;min-height:0}
+.tag.mega{display:inline-block;font-size:.66rem;font-weight:700;letter-spacing:.5px;border-radius:6px;padding:1px 7px;
+  color:var(--accent2);border:1px solid var(--accent2);background:rgba(62,199,199,.1)}
+.tag.mega.on{background:var(--accent2);color:#10151d}
+.card.picked{border-color:var(--accent2);box-shadow:0 0 0 1px var(--accent2)}
+.card .sel{position:absolute;top:8px;left:8px;width:20px;height:20px;cursor:pointer;z-index:1}
+.card .sel input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.card .sel span{display:block;width:20px;height:20px;border-radius:6px;background:rgba(0,0,0,.45);
+  border:2px solid var(--border);transition:.15s}
+.card .sel:hover span{border-color:var(--accent2)}
+.card .sel input:checked+span{background:var(--accent2);border-color:var(--accent2)}
+.card .sel input:checked+span::after{content:"";display:block;width:5px;height:10px;margin:1px 0 0 5px;
+  border:solid #10151d;border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
+.card .sel input:focus-visible+span{outline:2px solid var(--accent);outline-offset:1px}

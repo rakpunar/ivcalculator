@@ -1,9 +1,11 @@
 /* Envanter durumu + arka plan veri kuyruğu + localStorage kalıcılığı */
 import { LS_KEY } from './data.js';
-import { abilityDesc, natureInfo, natDescOf, baseStats, loadMoveMeta, spriteURL, artURL } from './api.js';
+import { abilityDesc, natureInfo, natDescOf, resolveView, loadMoveMeta, spriteURL, artURL } from './api.js';
 import { calcMon } from './stats.js';
 
 export const mons = [];
+
+const DEFAULT_VIEW = { lvl100:false, stage:'current', form:null, finalPick:null, megaPick:null };
 
 /* basit event bus */
 const listeners = {};
@@ -36,14 +38,12 @@ async function processQueue(){
   while(queue.length){
     const mon = queue.shift();
     try{
-      const [ab, ni, base] = await Promise.all([
-        abilityDesc(mon.ability), natureInfo(mon.nature), baseStats(mon.name)
+      const [ab, ni] = await Promise.all([
+        abilityDesc(mon.ability), natureInfo(mon.nature), refreshView(mon)
       ]);
-      mon.abDesc = ab; mon.natureInfo = ni; mon.base = base; mon.err = null;
+      mon.abDesc = ab; mon.natureInfo = ni; mon.err = null;
       mon.natDesc = natDescOf(ni);
-      mon.types = base.types;
       await loadMoveMeta(mon);
-      try{ mon.calc = await calcMon(mon); }catch(e){}
       mon.loading = false;
       message('ok', `✔ ${mon.name}: stat data updated.`);
     }catch(err){
@@ -59,10 +59,49 @@ async function processQueue(){
   updateQueueStatus();
 }
 
+/* ---------- görünüm (seviye / evrim / form) ---------- */
+/** mon.view'a göre Pokémon'u çözer; base, tür, görsel, label ve stat hesabını günceller.
+ *  Art arda çağrılırsa yalnızca en sonuncu sonucu uygulanır. */
+export async function refreshView(mon){
+  const tok = mon._t = {};
+  const r = await resolveView(mon);
+  if(mon._t !== tok) return;
+  mon.eff = r; mon.opts = r.opts; mon.base = r.base; mon.types = r.base.types;
+  mon.sprite = spriteURL(r.base.id); // eski kayıtlı pokemondb URL'lerini de ezer
+  mon.art    = artURL(r.base.id);
+  try{ mon.calc = await calcMon(mon); }catch(e){ mon.calc = null; }
+}
+
+export function setView(mon, patch){
+  Object.assign(mon.view, patch);
+  saveInventory();
+  emit('grid'); // radyolar anında güncellenir
+  refreshView(mon).then(() => { saveInventory(); emit('grid'); emit('mon', mon); })
+    .catch(err => message('err', `⚠ ${mon.name}: ${err.message}`));
+}
+
+/** Seçili Pokémon varsa onlara, yoksa tümüne uygular. Uygulanamayan evrim aşamasını atlar. */
+export function bulkView(patch){
+  const sel = mons.filter(m => m.sel);
+  (sel.length ? sel : mons).forEach(m => {
+    const p = { ...patch };
+    if(!stageAvailable(m, p.stage)) delete p.stage;
+    if(Object.keys(p).length) setView(m, p);
+  });
+}
+export function stageAvailable(m, stage){
+  if(stage === 'final') return !m.opts || m.opts.finals.length > 0;
+  if(stage === 'mega')  return !m.opts || m.opts.hasMega;
+  return true;
+}
+
+/* ---------- seçim ---------- */
+export function setSel(mon, v){ mon.sel = v; saveInventory(); emit('grid'); }
+export function selectAll(fn = () => true){ mons.forEach(m => { m.sel = fn(m); }); saveInventory(); emit('grid'); }
+
 /* ---------- CRUD ---------- */
 export function addMon(mon){
-  mon.sprite = spriteURL(mon.name);
-  mon.art    = artURL(mon.name);
+  mon.view = { ...DEFAULT_VIEW }; mon.sel = false;
   mons.push(mon);
   saveInventory();
   emit('grid');
@@ -90,7 +129,7 @@ function saveInventory(){
     const data = mons.map(m => ({
       name:m.name, level:m.level, ability:m.ability, nature:m.nature,
       evs:m.evs, ivs:m.ivs, moves:m.moves, tera:m.tera ?? null,
-      sprite:m.sprite, art:m.art, moveMeta:m.moveMeta ?? null
+      sprite:m.sprite, art:m.art, moveMeta:m.moveMeta ?? null, view:m.view, sel:!!m.sel
     }));
     localStorage.setItem(LS_KEY, JSON.stringify(data));
   }catch(e){ /* quota vb. sessizce geç */ }
@@ -101,7 +140,7 @@ export function loadInventory(){
   try{ data = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); }catch(e){}
   if(!Array.isArray(data)) return;
   data.forEach(d => {
-    mons.push(Object.assign({ evs:{}, ivs:{}, moves:[], loading:true }, d));
+    mons.push(Object.assign({ evs:{}, ivs:{}, moves:[], loading:true }, d, { view:{ ...DEFAULT_VIEW, ...d.view } }));
   });
   if(mons.length) message('ok', `✔ ${mons.length} Pokémon restored from browser storage.`);
   emit('grid');

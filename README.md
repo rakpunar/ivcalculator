@@ -7,8 +7,7 @@ Showdown-formatında yapıştırılan Pokémon'un kartını oluşturan, IV/EV ve
 ## Özellikler
 
 - Showdown export formatı parse edilir (Name, Ability, Nature, EVs, IVs, Moves, Tera)
-- Görsel, Ability açıklaması, Nature bilgisi ve Base Statlar **PokéAPI** üzerinden canlı çekilir (pokemondb HTML scrape fallback)
-- Base statlar büyükten küçüğe sıralanır; **yeşil→kırmızı** progress bar
+- Görsel, Ability açıklaması, Nature bilgisi ve Base Statlar **PokéAPI** üzerinden canlı çekilir- Base statlar büyükten küçüğe sıralanır; **yeşil→kırmızı** progress bar
 - Stat tablosu: `ATK / DEF / SPD / SPATK / SPDEF / HP` sırası ile IV, EV ve **Lv.100 hesabı** tek tabloda (Gen 3+ formülü, nature modifier dahil)
 - Envanter kartları: isim, ability tooltip, nature tooltip, Toplam IV (max 186)
 - Tarayıcıda kalıcı (localStorage) — sayfa yenilendiğinde envanter geri yüklenir
@@ -38,7 +37,7 @@ IVs: 15 HP / 27 Atk / 4 Def / 29 SpA / 28 SpD / 11 Spe
 
 ## Notlar
 
-- Veri kaynağı: [PokéAPI](https://pokeapi.co) (CORS açık, doğrudan tarayıcıdan çağrılır); yeterli veri gelirse [pokemondb.net](https://pokemondb.net) fallback devreye girer.
+- Veri kaynağı: [PokéAPI](https://pokeapi.co) (CORS açık, doğrudan tarayıcıdan çağrılır); görseller [PokeAPI/sprites](https://github.com/PokeAPI/sprites) deposundan gelir. Scrape/proxy yok.
 - Pokémon kayıtları yalnızca **senin tarayıcında** saklanır (localStorage), sunucuya gitmez.
 
 ## Yerel Çalıştırma

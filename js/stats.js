@@ -3,7 +3,10 @@ import { KEYS, STATS } from './data.js';
 import { natureInfo } from './api.js';
 import { STAT_API_TO_KEY } from './data.js';
 
-/** Lv.100 gerçek statları döndürür {HP, Atk, Def, SpA, SpD, Spe}. base yüklenmemişse null. */
+/** Gösterilen seviye: 'Lv.100' seçiliyse ya da seviye yoksa 100, aksi halde Pokémon'un kendi seviyesi */
+export const effLevel = m => (m.view?.lvl100 || !m.level) ? 100 : m.level;
+
+/** Seçili seviyedeki gerçek statları döndürür {HP, Atk, Def, SpA, SpD, Spe}. base yüklenmemişse null. */
 export async function calcMon(m){
   let ni = null;
   try{ ni = await natureInfo(m.nature); }catch(e){ /* nötr kabul */ }
@@ -12,7 +15,7 @@ export async function calcMon(m){
   const out = {};
   for(const k of KEYS){
     const base = m.base.stats[k];
-    const iv = STATS.get(m.ivs,k), ev = STATS.get(m.evs,k), L = 100;
+    const iv = STATS.get(m.ivs,k), ev = STATS.get(m.evs,k), L = effLevel(m);
     if(k === 'HP'){
       out[k] = Math.floor((2*base + iv + Math.floor(ev/4)) * L/100) + L + 10;
     } else {
