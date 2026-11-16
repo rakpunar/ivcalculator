@@ -211,3 +211,9 @@ kbd{background:var(--panel2);border:1px solid var(--border);border-radius:4px;pa
 .card img,.m-left img{display:block;margin-left:auto;margin-right:auto}
 
 .t-shadow{background-color:#639}
+
+.filters{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.filters input[type=search]{min-width:200px}
+.filters input[type=number]{width:56px}
+.filters label{display:flex;gap:4px;align-items:center;font-size:12px}
+#fcnt{font-size:12px;opacity:.8}

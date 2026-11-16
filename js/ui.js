@@ -1,7 +1,7 @@
 /* UI: envanter grid (template), modal (template), tooltip, mesajlar */
 import { STAT_ORDER, STAT_COLORS, STATS, CAT_ICON } from './data.js';
 import { natureDesc, moveMeta, imgSrc } from './api.js';
-import { PLACEHOLDER } from './sprites.js';
+import { PLACEHOLDER, cropSprite } from './sprites.js';
 import { calcMon, effLevel } from './stats.js';
 import { mons, on, setView, bulkView, stageAvailable, megaAvailable, setSel, selectAll, refreshView } from './state.js';
 
@@ -26,12 +26,12 @@ function typeChips(types){
 }
 
 /* Yerel sprite adaylarını sırayla dener; hiçbiri yüklenmezse yer tutucu */
+const io = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting){ io.unobserve(e.target); e.target._go(); } }), { rootMargin: '400px' });
 function setImg(img, cands){
   const list = (cands ?? []).filter(Boolean); let i = 0;
-  img.loading = 'lazy';
-  const next = () => { if(i >= list.length){ img.onerror = null; img.src = PLACEHOLDER; return; } imgSrc(list[i++]).then(src => { img.src = src; }); };
-  img.onerror = next;
-  next();
+  const next = () => { if(i >= list.length){ img.onerror = null; img.src = PLACEHOLDER; return; }
+    imgSrc(list[i++]).then(cropSprite).then(src => { img.src = src; }).catch(next); }; // boşluklar kırpılır
+  img._go = next; io.observe(img); // görünür olunca yükle
 }
 
 function colorForValue(v, sorted){
@@ -65,11 +65,66 @@ function ctrlHTML(m, i){ // i: radyo grup adı eki (kart indeksi veya 'M' = moda
   return h;
 }
 
+/* ---------- filtre / sıralama (yalnızca görünüm; envanter sırası değişmez) ---------- */
+const IVK = ['HP','Atk','Def','SpA','SpD','Spe'];
+const F = { q:'', nature:'', type:'', minIV:0, minLv:0, perfect:0, shiny:false, sort:'', dir:1 };
+const perfect = m => IVK.filter(k => STATS.get(m.ivs, k) >= 31).length;
+const SORTS = { name:m => (m.eff?.label ?? m.name).toLowerCase(), level:m => m.level ?? 0, nature:m => m.nature ?? '', iv:tv, perfect,
+  ...Object.fromEntries(IVK.map(k => [k.toLowerCase(), m => STATS.get(m.ivs, k)])) };
+const passes = m => {
+  if(F.nature && m.nature !== F.nature) return false;
+  if(F.type && !(m.types ?? []).includes(F.type)) return false;
+  if(tv(m) < F.minIV || (m.level ?? 0) < F.minLv || perfect(m) < F.perfect) return false;
+  if(F.shiny && !m.shiny) return false;
+  if(F.q){ const h = [m.name, m.eff?.label, m.nature, m.ability, m.abName, ...(m.moves ?? [])].join(' ').toLowerCase();
+    return F.q.split(/\s+/).every(t => h.includes(t)); }
+  return true;
+};
+const visible = () => {
+  const a = mons.map((m, i) => i).filter(i => passes(mons[i]));
+  const f = SORTS[F.sort];
+  if(f) a.sort((x, y) => { const p = f(mons[x]), q = f(mons[y]); return (p < q ? -1 : p > q ? 1 : x - y) * F.dir; });
+  return a;
+};
+function initFilter(){
+  const el = $('#filters'), opt = (v, t) => `<option value="${v}">${t}</option>`;
+  const natures = [...new Set(mons.map(m => m.nature).filter(Boolean))].sort();
+  const types = [...new Set(mons.flatMap(m => m.types ?? []))].sort();
+  const sig = natures.join() + '|' + types.join();
+  if(el.dataset.sig === sig) return; el.dataset.sig = sig;
+  el.innerHTML = `<input id="fq" type="search" placeholder="Search name / move / ability…" value="${esc(F.q)}">
+    <select id="fnat">${opt('', 'Nature: any')}${natures.map(n => opt(n, n)).join('')}</select>
+    <select id="ftype">${opt('', 'Type: any')}${types.map(n => opt(n, pretty(n))).join('')}</select>
+    <label>IV ≥ <input id="fiv" type="number" min="0" max="186" value="${F.minIV || ''}"></label>
+    <label>31s ≥ <input id="fpf" type="number" min="0" max="6" value="${F.perfect || ''}"></label>
+    <label>Lv ≥ <input id="flv" type="number" min="0" max="100" value="${F.minLv || ''}"></label>
+    <label><input id="fsh" type="checkbox"${F.shiny ? ' checked' : ''}> Shiny</label>
+    <select id="fsort">${opt('', 'Sort: inventory order')}${[['name','Name'],['level','Level'],['nature','Nature'],['iv','IV total'],['perfect','Perfect IVs (31)'],...IVK.map(k => [k.toLowerCase(), k + ' IV'])].map(([v, t]) => opt(v, t)).join('')}</select>
+    <button class="mini" id="fdir" title="Toggle ascending / descending"></button>
+    <button class="mini" id="fclr">Reset</button><span id="fcnt"></span>`;
+  $('#fnat').value = F.nature; $('#ftype').value = F.type; $('#fsort').value = F.sort;
+}
+function initFilterEvents(){
+  const set = () => { Object.assign(F, { q: $('#fq').value.trim().toLowerCase(), nature: $('#fnat').value, type: $('#ftype').value,
+    minIV: +$('#fiv').value || 0, perfect: +$('#fpf').value || 0, minLv: +$('#flv').value || 0, shiny: $('#fsh').checked, sort: $('#fsort').value }); renderGrid(); };
+  const el = $('#filters'); let t;
+  el.addEventListener('input', () => { clearTimeout(t); t = setTimeout(set, 150); });
+  el.addEventListener('change', set);
+  el.addEventListener('click', e => {
+    if(e.target.id === 'fdir'){ F.dir = -F.dir; renderGrid(); }
+    else if(e.target.id === 'fclr'){ Object.assign(F, { q:'', nature:'', type:'', minIV:0, minLv:0, perfect:0, shiny:false, sort:'', dir:1 }); el.dataset.sig = ''; renderGrid(); }
+  });
+}
+
 export function renderGrid(){
+  initFilter();
+  const order = visible();
   $('#count').textContent = mons.length;
+  $('#fcnt').textContent = `${order.length} / ${mons.length}`;
+  $('#fdir').textContent = F.dir > 0 ? '↑ Asc' : '↓ Desc';
   const slot = $('#emptySlot'); slot.remove();
   grid.innerHTML = '';
-  mons.forEach((m,i)=>{
+  order.forEach(i => { const m = mons[i];
     const node = $('#tpl-card').content.firstElementChild.cloneNode(true);
     node.dataset.i = i;
     node.querySelector('.name').textContent = (m.eff?.label ?? m.name) + (m.loading ? ' ⏳' : '');
@@ -355,6 +410,7 @@ export function initUI({ remove, clearAll }){
   document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal(); });
 
   initToolbar();
+  initFilterEvents();
   on('grid', renderGrid);   // envanter değişince yeniden çiz
   on('mon',  mon => { if(modalMon === mon) renderModal(mon); }); // kuyruktan veri gelince modal güncellenir
   on('msg',  showMessage);
