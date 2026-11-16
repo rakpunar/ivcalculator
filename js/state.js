@@ -1,4 +1,5 @@
 /* Envanter durumu + arka plan veri kuyruğu + localStorage kalıcılığı */
+import { logEvent } from './log.js';
 import { LS_KEY } from './data.js';
 import { abilityDesc, natureInfo, natDescOf, resolveView, loadMoveMeta, spriteURL, artURL } from './api.js';
 import { calcMon } from './stats.js';
@@ -21,7 +22,8 @@ function fire(ev, payload){
   (listeners[ev] || []).forEach(fn => { try{ fn(payload); }catch(e){ console.error(e); } });
 }
 export const on = (ev, fn) => { (listeners[ev] ??= []).push(fn); };
-function message(type, text){ emit('msg', {type, text}); }
+function message(type, text){
+  if(type === 'err') logEvent('error', text); emit('msg', {type, text}); }
 
 /* ---------- arka plan kuyruğu ---------- */
 const queue = [];
