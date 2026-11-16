@@ -1,6 +1,6 @@
 /* Liste paylaşım servisi (Cloudflare Worker + KV).
-   GET    /api/lists/:code            -> { data, t }
-   POST   /api/lists  {code?, data}   -> { code, key }   (code yoksa rastgele üretilir)
+   GET    /api/lists/:code[?meta=1]   -> { data, t } (meta: yalnızca { t })
+   POST   /api/lists  {code?, data}   -> { code, t }     (code yoksa rastgele; anahtar = kod)
    PUT    /api/lists/:code  (X-Key)   -> { ok }
    DELETE /api/lists/:code  (X-Key)   -> { ok }
    data = istemcinin sıkıştırdığı metin; sunucu içeriğini yorumlamaz. Düzenleme anahtarı yalnızca SHA-256 özeti olarak saklanır. */
@@ -31,7 +31,8 @@ export default {
     if(req.method === 'GET' && code){
       if(!CODE_RE.test(code)) return send({ error: 'bad code' }, 400);
       const v = await env.LISTS.get(kv(code), 'json');
-      return v ? send({ data: v.data, t: v.t }) : send({ error: 'not found' }, 404);
+      if(!v) return send({ error: 'not found' }, 404);
+      return new URL(req.url).searchParams.has('meta') ? send({ t: v.t }) : send({ data: v.data, t: v.t });
     }
 
     let body = {};
@@ -48,9 +49,9 @@ export default {
       }else{
         do c = rand(10, ALPHABET); while(await env.LISTS.get(kv(c)));
       }
-      const key = rand(24, ALPHABET);
-      await env.LISTS.put(kv(c), JSON.stringify({ h: await sha(key), data: body.data, t: Date.now() }), { expirationTtl: TTL });
-      return send({ code: c, key }, 201);
+      const t = Date.now();             // düzenleme anahtarı = kodun kendisi (bağlantıyı bilen düzenleyebilir)
+      await env.LISTS.put(kv(c), JSON.stringify({ h: await sha(c), data: body.data, t }), { expirationTtl: TTL });
+      return send({ code: c, t }, 201);
     }
 
     if((req.method === 'PUT' || req.method === 'DELETE') && code){
@@ -59,8 +60,9 @@ export default {
       if(!v) return send({ error: 'not found' }, 404);
       if(await sha(req.headers.get('X-Key') || '') !== v.h) return send({ error: 'forbidden' }, 403);
       if(req.method === 'DELETE'){ await env.LISTS.delete(kv(code)); return send({ ok: true }); }
-      await env.LISTS.put(kv(code), JSON.stringify({ h: v.h, data: body.data, t: Date.now() }), { expirationTtl: TTL });
-      return send({ ok: true });
+      const t = Date.now();
+      await env.LISTS.put(kv(code), JSON.stringify({ h: v.h, data: body.data, t }), { expirationTtl: TTL });
+      return send({ ok: true, t });
     }
     return send({ error: 'method' }, 405);
   },

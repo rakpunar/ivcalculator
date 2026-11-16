@@ -145,6 +145,21 @@ export function addMons(list){
   return { added: fresh.length, skipped: list.length - fresh.length };
 }
 
+/** Paylaşılan listeden gelen envanterle değiştirir: aynı uid'nin görünüm/seçimi ve değişmemiş Pokémon'un hesapları korunur */
+export function setInventory(list){
+  const old = new Map(mons.filter(m => m.uid).map(m => [m.uid, m]));
+  const next = list.map(d => {
+    const o = d.uid && old.get(d.uid);
+    if(o && JSON.stringify(exportMon(o)) === JSON.stringify(exportMon(Object.assign({ evs:{}, ivs:{}, moves:[] }, d)))) return o;
+    const mon = Object.assign({ evs:{}, ivs:{}, moves:[], loading:true }, d, { view:{ ...DEFAULT_VIEW, ...o?.view }, sel:!!o?.sel });
+    return mon;
+  });
+  const fresh = next.filter(m => !mons.includes(m));
+  mons.length = 0; mons.push(...next);
+  saveInventory(); emit('grid');
+  fresh.forEach(enqueueDataFetch);
+}
+
 export function removeMon(index){
   const [m] = mons.splice(index,1);
   saveInventory();
@@ -182,15 +197,19 @@ export const exportMon = m => ({
   name:m.name, level:m.level, ability:m.ability, nature:m.nature,
   evs:m.evs, evs0:m.evs0, ivs:m.ivs, moves:m.moves, tera:m.tera ?? null, uid:m.uid ?? null, dex:m.dex ?? null, gform:m.gform ?? 0, shiny:!!m.shiny,
 });
+/* Paylaşılan listeye bağlıysa envanter o listenin kendi anahtarına yazılır; kişinin kendi envanteri LS_KEY'de bozulmadan kalır */
+const wsKey = () => { try{ const c = JSON.parse(localStorage.getItem('ivcalc.share.v1') || 'null')?.code; return c ? LS_KEY + ':' + c : LS_KEY; }catch(e){ return LS_KEY; } };
 let quotaWarned = false, saveTimer = null;
 function saveInventory(){ // art arda çağrılar tek yazımda birleşir (500 kayıt = her seferinde büyük JSON)
   saveTimer ??= setTimeout(saveNow, 400);
 }
 addEventListener('pagehide', () => { if(saveTimer) saveNow(); });
+export const flushSave = () => saveNow();
 function saveNow(){
   clearTimeout(saveTimer); saveTimer = null;
   try{
-    localStorage.setItem(LS_KEY, JSON.stringify(mons.map(m => ({ ...exportMon(m), view:m.view, sel:!!m.sel }))));
+    localStorage.setItem(wsKey(), JSON.stringify(mons.map(m => ({ ...exportMon(m), view:m.view, sel:!!m.sel }))));
+    fire('saved');
   }catch(e){
     if(!quotaWarned){ quotaWarned = true; message('err', t('⚠ Browser storage is full: the inventory could not be saved.')); }
   }
@@ -198,7 +217,7 @@ function saveNow(){
 
 export function loadInventory(){
   let data = null;
-  try{ data = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); }catch(e){}
+  try{ data = JSON.parse(localStorage.getItem(wsKey()) || 'null'); }catch(e){}
   if(!Array.isArray(data)) return;
   data.forEach(d => {
     const view = { ...DEFAULT_VIEW, ...d.view };
