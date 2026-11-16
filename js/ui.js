@@ -92,16 +92,20 @@ function initFilter(){
   const types = [...new Set(mons.flatMap(m => m.types ?? []))].sort();
   const sig = natures.join() + '|' + types.join();
   if(el.dataset.sig === sig) return; el.dataset.sig = sig;
-  el.innerHTML = `<input id="fq" type="search" placeholder="Search name / move / ability…" value="${esc(F.q)}">
-    <select id="fnat">${opt('', 'Nature: any')}${natures.map(n => opt(n, n)).join('')}</select>
-    <select id="ftype">${opt('', 'Type: any')}${types.map(n => opt(n, pretty(n))).join('')}</select>
-    <label>IV ≥ <input id="fiv" type="number" min="0" max="186" value="${F.minIV || ''}"></label>
-    <label>31s ≥ <input id="fpf" type="number" min="0" max="6" value="${F.perfect || ''}"></label>
-    <label>Lv ≥ <input id="flv" type="number" min="0" max="100" value="${F.minLv || ''}"></label>
-    <label><input id="fsh" type="checkbox"${F.shiny ? ' checked' : ''}> Shiny</label>
-    <select id="fsort">${opt('', 'Sort: inventory order')}${[['name','Name'],['level','Level'],['nature','Nature'],['iv','IV total'],['perfect','Perfect IVs (31)'],...IVK.map(k => [k.toLowerCase(), k + ' IV'])].map(([v, t]) => opt(v, t)).join('')}</select>
-    <button class="mini" id="fdir" title="Toggle ascending / descending"></button>
-    <button class="mini" id="fclr">Reset</button><span id="fcnt"></span>`;
+  const num = (id, lbl, max, v) => `<label class="fld"><span>${lbl}</span><input id="${id}" class="inp" type="number" inputmode="numeric" min="0" max="${max}" placeholder="0" value="${v || ''}"></label>`;
+  el.innerHTML = `<div class="f-row">
+      <input id="fq" class="inp f-search" type="search" placeholder="Search name, move, ability…" aria-label="Search" value="${esc(F.q)}">
+      <select id="fsort" class="pick" aria-label="Sort by">${opt('', 'Sort: inventory order')}${[['name','Name'],['level','Level'],['nature','Nature'],['iv','IV total'],['perfect','Perfect IVs (31)'],...IVK.map(k => [k.toLowerCase(), k + ' IV'])].map(([v, t]) => opt(v, t)).join('')}</select>
+      <button class="mini" id="fdir" title="Toggle ascending / descending"></button>
+      <button class="mini" id="ftoggle" aria-expanded="false" aria-controls="filters">Filters</button>
+    </div>
+    <div class="f-row f-more">
+      <select id="fnat" class="pick" aria-label="Nature">${opt('', 'Nature: any')}${natures.map(n => opt(n, n)).join('')}</select>
+      <select id="ftype" class="pick" aria-label="Type">${opt('', 'Type: any')}${types.map(n => opt(n, pretty(n))).join('')}</select>
+      ${num('fiv', 'IV ≥', 186, F.minIV)}${num('fpf', '31s ≥', 6, F.perfect)}${num('flv', 'Lv ≥', 100, F.minLv)}
+      <label class="chip"><input id="fsh" type="checkbox"${F.shiny ? ' checked' : ''}><span>★ Shiny</span></label>
+      <span class="f-end"><span id="fcnt"></span><button class="mini" id="fclr">Reset</button></span>
+    </div>`;
   $('#fnat').value = F.nature; $('#ftype').value = F.type; $('#fsort').value = F.sort;
 }
 function initFilterEvents(){
@@ -112,6 +116,7 @@ function initFilterEvents(){
   el.addEventListener('change', set);
   el.addEventListener('click', e => {
     if(e.target.id === 'fdir'){ F.dir = -F.dir; renderGrid(); }
+    else if(e.target.id === 'ftoggle'){ const o = el.classList.toggle('open'); e.target.setAttribute('aria-expanded', o); }
     else if(e.target.id === 'fclr'){ Object.assign(F, { q:'', nature:'', type:'', minIV:0, minLv:0, perfect:0, shiny:false, sort:'', dir:1 }); el.dataset.sig = ''; renderGrid(); }
   });
 }
@@ -122,6 +127,9 @@ export function renderGrid(){
   $('#count').textContent = mons.length;
   $('#fcnt').textContent = `${order.length} / ${mons.length}`;
   $('#fdir').textContent = F.dir > 0 ? '↑ Asc' : '↓ Desc';
+  const active = [F.nature, F.type, F.minIV, F.perfect, F.minLv, F.shiny].filter(Boolean).length; // telefonda gizli filtre sayısı
+  $('#ftoggle').textContent = active ? `Filters · ${active}` : 'Filters';
+  $('#ftoggle').classList.toggle('on', active > 0);
   const slot = $('#emptySlot'); slot.remove();
   grid.innerHTML = '';
   order.forEach(i => { const m = mons[i];
