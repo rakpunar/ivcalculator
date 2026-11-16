@@ -25,5 +25,15 @@ btnAdd.addEventListener('click', () => {
   paste.value = '';
 });
 
+/* Önbelleği atlayarak tüm site dosyalarını yeniden indirir, sonra sayfayı yeniler (envanter localStorage'da kalır).
+   shortcut: dosya listesi elle tutuluyor, yeni dosya eklenince buraya da eklenmeli. */
+const SITE_FILES = ['./', 'style.css', 'js/main.js', 'js/api.js', 'js/data.js', 'js/parser.js', 'js/state.js', 'js/stats.js', 'js/ui.js'];
+const btnReload = document.getElementById('btnReload');
+btnReload.addEventListener('click', async () => {
+  btnReload.disabled = true; btnReload.textContent = 'Updating…';
+  await Promise.all(SITE_FILES.map(f => fetch(f, { cache:'reload' }).catch(() => {})));
+  location.reload();
+});
+
 initUI({ remove: removeMon, clearAll });
 loadInventory();
