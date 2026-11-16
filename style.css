@@ -313,3 +313,7 @@ select.pick{color-scheme:dark}
 .dlg::backdrop{background:rgba(5,8,14,.75)}
 .dlg p{margin-bottom:12px;line-height:1.45}
 .dlg .shotrow{flex-wrap:wrap}
+
+.langrow{display:flex;justify-content:flex-end;margin-bottom:6px}
+.tiny-row .type-icon{line-height:1.4;font-size:.62rem}
+.m-footer .type-icon{width:auto;padding:0 10px}

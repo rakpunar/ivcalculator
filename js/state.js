@@ -1,5 +1,6 @@
 /* Envanter durumu + arka plan veri kuyruğu + localStorage kalıcılığı */
 import { logEvent } from './log.js';
+import { t } from './i18n.js';
 import { LS_KEY } from './data.js';
 import { abilityDesc, natureInfo, natDescOf, resolveView, loadMoveMeta } from './api.js';
 import { spriteList } from './sprites.js';
@@ -51,10 +52,10 @@ async function runOne(mon){
     mon.natDesc = natDescOf(ni);
     await loadMoveMeta(mon);
     mon.loading = false;
-    if(queue.length < 3) message('ok', `✔ ${mon.name}: stat data updated.`);
+    if(queue.length < 3) message('ok', t('✔ {name}: stat data updated.', { name: mon.name }));
   }catch(err){
     mon.err = err.message; mon.loading = false;
-    message('err', `⚠ ${mon.name}: could not fetch data (${err.message}); will retry in tooltip/modal.`);
+    message('err', t('⚠ {name}: could not fetch data ({err}); will retry in tooltip/modal.', { name: mon.name, err: err.message }));
   }
   saveInventory();
   emit('grid');
@@ -148,7 +149,7 @@ export function removeMon(index){
   const [m] = mons.splice(index,1);
   saveInventory();
   emit('grid');
-  if(m) message('ok', `🗑 ${m.name} removed from inventory.`);
+  if(m) message('ok', t('🗑 {name} removed from inventory.', { name: m.name }));
   return m;
 }
 
@@ -156,7 +157,7 @@ export function clearAll(){
   mons.length = 0;
   saveInventory();
   emit('grid');
-  message('ok', '🗑 Inventory cleared.');
+  message('ok', t('🗑 Inventory cleared.'));
 }
 
 /* ---------- EV düzenleme: ilk girilen değerler (evs0) saklanır, istenince geri dönülür ---------- */
@@ -191,7 +192,7 @@ function saveNow(){
   try{
     localStorage.setItem(LS_KEY, JSON.stringify(mons.map(m => ({ ...exportMon(m), view:m.view, sel:!!m.sel }))));
   }catch(e){
-    if(!quotaWarned){ quotaWarned = true; message('err', '⚠ Browser storage is full: the inventory could not be saved.'); }
+    if(!quotaWarned){ quotaWarned = true; message('err', t('⚠ Browser storage is full: the inventory could not be saved.')); }
   }
 }
 
@@ -204,7 +205,7 @@ export function loadInventory(){
     if(view.stage === 'mega'){ view.stage = 'current'; view.mega = true; } // eski kayıt göçü
     mons.push(Object.assign({ evs:{}, ivs:{}, moves:[], loading:true }, d, { view }));
   });
-  if(mons.length) message('ok', `✔ ${mons.length} Pokémon restored from browser storage.`);
+  if(mons.length) message('ok', t('✔ {n} Pokémon restored from browser storage.', { n: mons.length }));
   emit('grid');
   mons.forEach(enqueueDataFetch);
 }

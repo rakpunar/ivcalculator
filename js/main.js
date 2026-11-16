@@ -5,6 +5,7 @@ import { addMon, removeMon, clearAll, loadInventory } from './state.js';
 import { parsePcExport, runImport } from './import.js';
 import { initBot } from './bot.js';
 import { initShare } from './share.js';
+import { initI18n, t } from './i18n.js';
 import { initUI, showMessage } from './ui.js';
 import { screenshotToText } from './ocr.js';
 
@@ -25,7 +26,7 @@ btnAdd.addEventListener('click', () => {
   addMon(mon);
   showMessage({
     type:'ok',
-    text:`✔ ${mon.name} added to inventory (Total IV: ${[...Object.entries(mon.ivs)].reduce((s,[,v])=>s+v,0)}/186) — fetching details in background.`
+    text:t('✔ {name} added to inventory (Total IV: {iv}/186) — fetching details in background.', { name: mon.name, iv: [...Object.entries(mon.ivs)].reduce((s,[,v])=>s+v,0) })
   });
   paste.value = '';
 });
@@ -35,16 +36,16 @@ const btnShot = document.getElementById('btnShot'), btnClip = document.getElemen
 async function readShot(file){
   if(!file?.type.startsWith('image/')) return;
   const status = document.getElementById('status');
-  btnShot.disabled = btnClip.disabled = true; btnClip.textContent = '⏳ Reading image… 0%';
-  status.textContent = '⏳ Reading the image takes a while (the first time the OCR engine, ~10 MB, must download). Please wait…';
+  btnShot.disabled = btnClip.disabled = true; btnClip.textContent = t('⏳ Reading image… 0%');
+  status.textContent = t('⏳ Reading the image takes a while (the first time the OCR engine, ~10 MB, must download). Please wait…');
   status.classList.add('show');
   try{
     const { text, warnings } = await screenshotToText(file, (pct, label) => {
       btnClip.textContent = `⏳ ${Math.round(pct)}%`;
-      status.textContent = `⏳ ${label} ${Math.round(pct)}% — this can take a while, please wait…`;
+      status.textContent = t('⏳ {label} {pct}% — this can take a while, please wait…', { label, pct: Math.round(pct) });
     });
     paste.value = text;
-    showMessage({ type:'ok', text:'✔ Image read. Check the text, then click Add.' + (warnings.length ? ' ⚠ ' + warnings.join('; ') : '') });
+    showMessage({ type:'ok', text:t('✔ Image read. Check the text, then click Add.') + (warnings.length ? ' ⚠ ' + warnings.join('; ') : '') });
   }catch(err){
     showMessage({ type:'err', text:'⚠ ' + err.message });
   }
@@ -58,9 +59,9 @@ btnClip.addEventListener('click', async () => {
       const type = item.types.find(t => t.startsWith('image/'));
       if(type) return readShot(new File([await item.getType(type)], 'clipboard', { type }));
     }
-    showMessage({ type:'err', text:'⚠ No image in the clipboard. Copy a screenshot first.' });
+    showMessage({ type:'err', text:t('⚠ No image in the clipboard. Copy a screenshot first.') });
   }catch(err){ // izin reddi / tarayıcı desteklemiyor: Ctrl+V her zaman çalışır
-    showMessage({ type:'err', text:'⚠ Could not read the clipboard. Press Ctrl+V on the page instead.' });
+    showMessage({ type:'err', text:t('⚠ Could not read the clipboard. Press Ctrl+V on the page instead.') });
   }
 });
 shotFile.addEventListener('change', () => { readShot(shotFile.files[0]); shotFile.value = ''; });
@@ -75,14 +76,15 @@ paste.addEventListener('drop', e => { const f = e.dataTransfer?.files?.[0]; if(f
 
 /* Önbelleği atlayarak tüm site dosyalarını yeniden indirir, sonra sayfayı yeniler (envanter localStorage'da kalır).
    shortcut: dosya listesi elle tutuluyor, yeni dosya eklenince buraya da eklenmeli. */
-const SITE_FILES = ['./', 'style.css', 'js/main.js', 'js/ocr.js', 'js/log.js', 'js/sprites.js', 'js/game.js', 'js/import.js', 'js/bot.js', 'js/share.js', 'js/api.js', 'js/data.js', 'js/parser.js', 'js/state.js', 'js/stats.js', 'js/ui.js'];
+const SITE_FILES = ['./', 'style.css', 'js/main.js', 'js/ocr.js', 'js/log.js', 'js/sprites.js', 'js/game.js', 'js/import.js', 'js/bot.js', 'js/share.js', 'js/i18n.js', 'js/api.js', 'js/data.js', 'js/parser.js', 'js/state.js', 'js/stats.js', 'js/ui.js'];
 const btnReload = document.getElementById('btnReload');
 btnReload.addEventListener('click', async () => {
-  btnReload.disabled = true; btnReload.textContent = 'Updating…';
+  btnReload.disabled = true; btnReload.textContent = t('Updating…');
   await Promise.all(SITE_FILES.map(f => fetch(f, { cache:'reload' }).catch(() => {})));
   location.reload();
 });
 
+initI18n();
 initUI({ remove: removeMon, clearAll });
 loadInventory();
 initBot();

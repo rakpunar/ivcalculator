@@ -28,3 +28,10 @@ export async function calcMon(m){
   }
   return out;
 }
+
+/* Hidden Power türü (Gen 3+ formülü): IV'lerin en düşük bitleri HP,Atk,Def,Spe,SpA,SpD sırasıyla */
+export const HP_TYPES = ['fighting','flying','poison','ground','rock','bug','ghost','steel','fire','water','grass','electric','psychic','ice','dragon','dark'];
+export function hiddenPower(ivs){
+  const b = ['HP','Atk','Def','Spe','SpA','SpD'].reduce((s, k, i) => s + ((STATS.get(ivs, k) & 1) << i), 0);
+  return HP_TYPES[Math.floor(b * 15 / 63)];
+}

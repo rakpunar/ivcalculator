@@ -1,6 +1,7 @@
 /* ProHelper PC dışa aktarımı ({"format":"prohelper-pc",...}) → envanter kayıtları */
 import { KEYS } from './data.js';
 import { addMons, on } from './state.js';
+import { t } from './i18n.js';
 
 /** Metin bu formatta mı? (yalnızca ucuz önkontrol + parse; değilse null) */
 export function parsePcExport(text){
@@ -42,7 +43,7 @@ on('queue', remaining => { if(imp?.total && !remaining) finish(); });
 
 function finish(){
   const i = imp; imp = null;
-  $('lockTitle').textContent = 'Import finished';
+  $('lockTitle').textContent = t('Import finished');
   $('lockBar').value = $('lockBar').max;
   $('lockTxt').textContent = i.summary;
   $('lockOk').hidden = false;
@@ -55,10 +56,10 @@ export function runImport(exp){
   const { mons: list, bad } = pcToMons(exp);
   return new Promise(resolve => {
     imp = { total: 0, done: 0, resolve, summary: '' };
-    $('lockOk').hidden = true; $('lockTitle').textContent = 'Importing…'; $('lockTxt').textContent = 'Starting…';
+    $('lockOk').hidden = true; $('lockTitle').textContent = t('Importing…'); $('lockTxt').textContent = t('Starting…');
     $('lockBar').value = 0; $('lockBar').max = Math.max(1, list.length); $('lock').hidden = false;
     const { added, skipped } = addMons(list);
-    imp.summary = `Added: ${added}\nSkipped (already in inventory): ${skipped}\nSkipped (invalid): ${bad}`;
+    imp.summary = t('Added: {a}\nSkipped (already in inventory): {s}\nSkipped (invalid): {b}', { a: added, s: skipped, b: bad });
     if(!added) return finish();
     imp.total = added; $('lockBar').max = added;
   });

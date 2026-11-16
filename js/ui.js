@@ -1,8 +1,9 @@
 /* UI: envanter grid (template), modal (template), tooltip, mesajlar */
 import { STAT_ORDER, STAT_COLORS, STATS, CAT_ICON } from './data.js';
-import { natureDesc, moveMeta, imgSrc } from './api.js';
+import { natureDesc, natDescOf, moveMeta, imgSrc } from './api.js';
 import { PLACEHOLDER, cropSprite } from './sprites.js';
-import { calcMon, effLevel } from './stats.js';
+import { calcMon, effLevel, hiddenPower, HP_TYPES } from './stats.js';
+import { t } from './i18n.js';
 import { mons, on, setView, bulkView, stageAvailable, megaAvailable, setSel, selectAll, refreshView, setEv, resetEvs, evTotal, evsChanged, EV_MAX, EV_TOTAL } from './state.js';
 
 const $  = sel => document.querySelector(sel);
@@ -22,7 +23,7 @@ const API_STAT = { hp:'HP', attack:'Atk', defense:'Def', 'special-attack':'SpA',
 
 function typeChips(types){
   if(!types?.length) return '';
-  return types.map(t => `<span class="type-icon t-${t}" title="${t[0].toUpperCase()+t.slice(1)} type">${t.toUpperCase()}</span>`).join('');
+  return types.map(t => `<span class="type-icon t-${t}" title="${t[0].toUpperCase()+t.slice(1)}">${t.toUpperCase()}</span>`).join('');
 }
 
 /* Yerel sprite adaylarını sırayla dener; hiçbiri yüklenmezse yer tutucu */
@@ -67,7 +68,8 @@ function ctrlHTML(m, i){ // i: radyo grup adı eki (kart indeksi veya 'M' = moda
 
 /* ---------- filtre / sıralama (yalnızca görünüm; envanter sırası değişmez) ---------- */
 const IVK = ['HP','Atk','Def','SpA','SpD','Spe'];
-const F = { q:'', nature:'', type:'', minIV:0, minLv:0, perfect:0, shiny:false, form:false, sort:'', dir:1 };
+const F = { q:'', nature:'', type:'', minIV:0, minLv:0, perfect:0, shiny:false, form:false, hp:'', sort:'', dir:1 };
+const hpChip = m => { const ty = hiddenPower(m.ivs); return `<span class="type-icon t-${ty}" style="width:auto;padding:0 8px">${ty.toUpperCase()}</span>`; };
 const isForm = m => +m.dex >= 3000 || +m.gform > 0 || (!!m.eff && !m.eff.isMega && m.eff.id !== m.eff.base?.species); // alternatif form (bölgesel, shadow, baby, event…)
 const perfect = m => IVK.filter(k => STATS.get(m.ivs, k) >= 31).length;
 const SORTS = { name:m => (m.eff?.label ?? m.name).toLowerCase(), level:m => m.level ?? 0, nature:m => m.nature ?? '', iv:tv, perfect,
@@ -78,6 +80,7 @@ const passes = m => {
   if(tv(m) < F.minIV || (m.level ?? 0) < F.minLv || perfect(m) < F.perfect) return false;
   if(F.shiny && !m.shiny) return false;
   if(F.form && !isForm(m)) return false;
+  if(F.hp && hiddenPower(m.ivs) !== F.hp) return false;
   if(F.q){ const h = [m.name, m.eff?.label, m.nature, m.ability, m.abName, ...(m.moves ?? [])].join(' ').toLowerCase();
     return F.q.split(/\s+/).every(t => h.includes(t)); }
   return true;
@@ -104,15 +107,16 @@ function initFilter(){
     <div class="f-row f-more">
       <select id="fnat" class="pick" aria-label="Nature">${opt('', 'Nature: any')}${natures.map(n => opt(n, n)).join('')}</select>
       <select id="ftype" class="pick" aria-label="Type">${opt('', 'Type: any')}${types.map(n => opt(n, pretty(n))).join('')}</select>
+      <select id="fhp" class="pick" aria-label="Hidden Power">${opt('', 'Hidden Power: any')}${HP_TYPES.map(n => opt(n, 'HP ' + pretty(n))).join('')}</select>
       ${num('fiv', 'IV ≥', 186, F.minIV)}${num('fpf', '31s ≥', 6, F.perfect)}${num('flv', 'Lv ≥', 100, F.minLv)}
       <label class="chip"><input id="fsh" type="checkbox"${F.shiny ? ' checked' : ''}><span>★ Shiny</span></label>
       <label class="chip"><input id="ffm" type="checkbox"${F.form ? ' checked' : ''}><span>◆ Forms</span></label>
       <span class="f-end"><span id="fcnt"></span><button class="mini" id="fclr">Reset</button></span>
     </div>`;
-  $('#fnat').value = F.nature; $('#ftype').value = F.type; $('#fsort').value = F.sort;
+  $('#fnat').value = F.nature; $('#ftype').value = F.type; $('#fhp').value = F.hp; $('#fsort').value = F.sort;
 }
 function initFilterEvents(){
-  const set = () => { Object.assign(F, { q: $('#fq').value.trim().toLowerCase(), nature: $('#fnat').value, type: $('#ftype').value,
+  const set = () => { Object.assign(F, { q: $('#fq').value.trim().toLowerCase(), nature: $('#fnat').value, type: $('#ftype').value, hp: $('#fhp').value,
     minIV: +$('#fiv').value || 0, perfect: +$('#fpf').value || 0, minLv: +$('#flv').value || 0, shiny: $('#fsh').checked, form: $('#ffm').checked, sort: $('#fsort').value }); renderGrid(); };
   const el = $('#filters'); let t;
   el.addEventListener('input', () => { clearTimeout(t); t = setTimeout(set, 150); });
@@ -120,7 +124,7 @@ function initFilterEvents(){
   el.addEventListener('click', e => {
     if(e.target.id === 'fdir'){ F.dir = -F.dir; renderGrid(); }
     else if(e.target.id === 'ftoggle'){ const o = el.classList.toggle('open'); e.target.setAttribute('aria-expanded', o); }
-    else if(e.target.id === 'fclr'){ Object.assign(F, { q:'', nature:'', type:'', minIV:0, minLv:0, perfect:0, shiny:false, form:false, sort:'', dir:1 }); el.dataset.sig = ''; renderGrid(); }
+    else if(e.target.id === 'fclr'){ Object.assign(F, { q:'', nature:'', type:'', minIV:0, minLv:0, perfect:0, shiny:false, form:false, hp:'', sort:'', dir:1 }); el.dataset.sig = ''; renderGrid(); }
   });
 }
 
@@ -130,8 +134,8 @@ export function renderGrid(){
   $('#count').textContent = mons.length;
   $('#fcnt').textContent = `${order.length} / ${mons.length}`;
   $('#fdir').textContent = F.dir > 0 ? '↑ Asc' : '↓ Desc';
-  const active = [F.nature, F.type, F.minIV, F.perfect, F.minLv, F.shiny, F.form].filter(Boolean).length; // telefonda gizli filtre sayısı
-  $('#ftoggle').textContent = active ? `Filters · ${active}` : 'Filters';
+  const active = [F.nature, F.type, F.hp, F.minIV, F.perfect, F.minLv, F.shiny, F.form].filter(Boolean).length; // telefonda gizli filtre sayısı
+  $('#ftoggle').textContent = active ? t('Filters · {n}', { n: active }) : 'Filters';
   $('#ftoggle').classList.toggle('on', active > 0);
   const slot = $('#emptySlot'); slot.remove();
   grid.innerHTML = '';
@@ -139,12 +143,13 @@ export function renderGrid(){
     const node = $('#tpl-card').content.firstElementChild.cloneNode(true);
     node.dataset.i = i;
     node.querySelector('.name').textContent = (m.eff?.label ?? m.name) + (m.loading ? ' ⏳' : '');
-    node.querySelector('.lvl').textContent = `Lv. ${m.view.lvl100 ? 100 : (m.level ?? '?')} · ${m.nature} Nature`;
+    node.querySelector('.lvl').textContent = t('Lv. {l} · {n} Nature', { l: m.view.lvl100 ? 100 : (m.level ?? '?'), n: m.nature });
     node.querySelector('.ability').textContent = m.abName ?? m.ability;
     node.querySelector('.ability').classList.toggle('ab-bad', m.abName === 'Unknown');
     node.querySelector('.iv-sum').textContent = `${tv(m)} / 186`;
     node.querySelector('.ivbadge .tv').textContent = tv(m);
     node.querySelector('.types').innerHTML = typeChips(m.types);
+    node.querySelector('.hp-type').innerHTML = hpChip(m);
     if(m.opts?.hasMega) node.querySelector('.tags').innerHTML = isMega(m)
       ? '<span class="tag mega on" title="Showing Mega Evolution">MEGA</span>'
       : '<span class="tag mega" title="This Pokémon has a Mega Evolution">★ Mega available</span>';
@@ -169,8 +174,8 @@ function renderToolbar(){
   const n = mons.length, sel = mons.filter(m => m.sel);
   const sum = list => list.reduce((s,m) => s + tv(m), 0);
   $('#totals').innerHTML =
-    `<span>List total IV <b>${sum(mons)}</b> <small>/ ${n*186} · ${n} Pokémon</small></span>` +
-    `<span>Selected total IV <b>${sum(sel)}</b> <small>/ ${sel.length*186} · ${sel.length} selected</small></span>`;
+    `<span>List total IV <b>${sum(mons)}</b> <small>${t('/ {a} · {n} Pokémon', { a: n*186, n })}</small></span>` +
+    `<span>Selected total IV <b>${sum(sel)}</b> <small>${t('/ {a} · {n} selected', { a: sel.length*186, n: sel.length })}</small></span>`;
 
   const all = fn => n > 0 && mons.every(fn);
   const lv = all(m => m.view.lvl100) ? '100' : all(m => !m.view.lvl100) ? 'cur' : '';
@@ -249,7 +254,7 @@ function statVal(m, k){
   return n ? `<b class="${n>0?'buffed':'debuffed'}">${Math.floor(v * buffMult(n))}</b> <small title="Base value">(${v}, ${n>0?'+':''}${n})</small>` : v;
 }
 
-const evInfoHTML = m => `<span class="tb-lbl">EV total</span> <b class="${evTotal(m) > EV_TOTAL ? 'debuffed' : ''}">${evTotal(m)}</b> <small>/ ${EV_TOTAL} · max ${EV_MAX} each</small>`
+const evInfoHTML = m => `<span class="tb-lbl">EV total</span> <b class="${evTotal(m) > EV_TOTAL ? 'debuffed' : ''}">${evTotal(m)}</b> <small>${t('/ {t} · max {m} each', { t: EV_TOTAL, m: EV_MAX })}</small>`
   + `<button class="mini" id="evReset" title="Restore the EVs this Pokémon was added with"${evsChanged(m) ? '' : ' disabled'}>↺ Reset EVs</button>`;
 /** EV değişince modalı yeniden çizmeden (odak kaybolmasın) hesaplanan statları ve toplamı günceller */
 function refreshEvUI(m){
@@ -273,7 +278,7 @@ function renderModal(m){
   root.querySelector('.types').innerHTML = typeChips(m.types) || '<span class="na">loading types…</span>';
   root.querySelector('.name').textContent = m.eff?.label ?? m.name;
   root.querySelector('.lvl').textContent = `Lv. ${m.view.lvl100 ? 100 : (m.level ?? '?')}`;
-  root.querySelector('.secstats').textContent = `Stats — Lv.${effLevel(m)} · IV · EV`;
+  root.querySelector('.secstats').textContent = t('Stats — Lv.{l} · IV · EV', { l: effLevel(m) });
   root.querySelector('.thlv').textContent = `Lv.${effLevel(m)}`;
   root.querySelector('.m-ctrl').innerHTML = ctrlHTML(m, 'M');
   root.querySelector('.lvl-extra').textContent = m.tera ? 'Tera: ' + m.tera : '';
@@ -284,8 +289,8 @@ function renderModal(m){
 
   // Stat dağılımı tablosu
   const ascKey = m.natureInfo?.inc, dscKey = m.natureInfo?.dec;
-  const arrow = k => (ascKey && API_STAT[ascKey]===k ? ' <span class="arrow-alert" title="Nature artış">▲</span>'
-                  :   dscKey && API_STAT[dscKey]===k ? ' <span class="arrow-down" title="Nature azalış">▼</span>' : '');
+  const arrow = k => (ascKey && API_STAT[ascKey]===k ? ' <span class="arrow-alert" title="Nature increase">▲</span>'
+                  :   dscKey && API_STAT[dscKey]===k ? ' <span class="arrow-down" title="Nature decrease">▼</span>' : '');
   root.querySelector('#statBody').innerHTML = STAT_ORDER.map(s=>`
     <tr>
       <td style="color:${STAT_COLORS[s.key]}">${s.label}${arrow(s.key)}</td>
@@ -299,7 +304,7 @@ function renderModal(m){
 
   // Base stat tablosu (sıra = Stat Dağılımı; renk = değere göre yeşil→kırmızı)
   root.querySelector('#baseBody').innerHTML = m.base
-    ? baseTableRows(m) : '<tr><td colspan="2" class="na">çekiliyor…</td></tr>';
+    ? baseTableRows(m) : '<tr><td colspan="2" class="na">loading…</td></tr>';
 
   // Hamleler (tablo)
   root.querySelector('#movesBody').innerHTML = moveRows(m);
@@ -307,6 +312,7 @@ function renderModal(m){
   // Alt orta blok: ability + nature adı/açıklaması (hamleler ve base statların altında, ortalanmış)
   root.querySelector('.fAbility').innerHTML =
     `<b>Ability:</b> <span class="abl${m.abName === 'Unknown' ? ' ab-bad' : ''}">${esc(m.abName ?? m.ability)}</span> — ${m.abDesc != null ? esc(m.abDesc) : 'loading…'}`;
+  root.querySelector('.hpv').innerHTML = hpChip(m);
   root.querySelector('.fNature').innerHTML =
     `<b>Nature:</b> <b>${esc(m.nature)}</b> — ${m.natDesc != null ? esc(m.natDesc) : 'loading…'}`;
 
@@ -407,10 +413,10 @@ function showAbilityTip(e, m){
   placeTip(e);
 }
 function showNatureTip(e, m){
-  tooltip.innerHTML = `<b>${esc(m.nature)} Nature</b><br><span class="skel">Loading…</span>`;
+  tooltip.innerHTML = `<b>${esc(t('{n} Nature', { n: m.nature }))}</b><br><span class="skel">Loading…</span>`;
   placeTip(e);
-  natureDesc(m.nature).then(d => { tooltip.innerHTML = `<b>${esc(m.nature)} Nature</b><br>${esc(d)}`; })
-    .catch(() => { tooltip.innerHTML = `<b>${esc(m.nature)} Nature</b><br><i>Could not load description.</i>`; });
+  natureDesc(m.nature).then(d => { tooltip.innerHTML = `<b>${esc(t('{n} Nature', { n: m.nature }))}</b><br>${esc(d)}`; })
+    .catch(() => { tooltip.innerHTML = `<b>${esc(t('{n} Nature', { n: m.nature }))}</b><br><i>Could not load description.</i>`; });
 }
 
 /* ---------- mesaj / kuyruk göstergesi ---------- */
@@ -423,7 +429,7 @@ export function showMessage({type, text}){
 export function showQueue(remaining){
   const st = $('#status');
   if(remaining > 0){
-    st.textContent = `⏳ Arka planda ${remaining} Pokémon'un verileri sırayla çekiliyor…`;
+    st.textContent = t('⏳ Fetching data for {n} Pokémon in the background…', { n: remaining });
     st.classList.add('show');
   } else st.classList.remove('show');
 }
@@ -434,13 +440,17 @@ export function initUI({ remove, clearAll }){
   clearAllRef = clearAll;
   $('#btnClear').addEventListener('click', () => {
     if(!mons.length) return;
-    if(confirm("All Pokémon will be removed from the inventory. Are you sure?")) clearAllRef();
+    if(confirm(t('All Pokémon will be removed from the inventory. Are you sure?'))) clearAllRef();
   });
   overlay.addEventListener('click', e => { if(e.target === overlay) closeModal(); });
   document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal(); });
 
   initToolbar();
   initFilterEvents();
+  addEventListener('langchange', () => { // dile bağlı üretilmiş metinleri yeniden üret
+    mons.forEach(m => { if(m.natureInfo) m.natDesc = natDescOf(m.natureInfo); });
+    renderGrid(); if(modalMon) renderModal(modalMon);
+  });
   on('grid', renderGrid);   // envanter değişince yeniden çiz
   on('mon',  mon => { if(modalMon === mon) renderModal(mon); }); // kuyruktan veri gelince modal güncellenir
   on('msg',  showMessage);

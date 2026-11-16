@@ -2,6 +2,7 @@
 import { mons, addMons, clearAll, exportMon } from './state.js';
 import { showMessage as msg } from './ui.js';
 import { logEvent } from './log.js';
+import { t } from './i18n.js';
 
 const API = 'https://ivcalc-share.r-akpunar.workers.dev/api/lists'; // deploy sonrası gerçek adresle değişir
 const LS = 'ivcalc.share.v1';             // { code, key } — düzenleme anahtarı yalnızca bu tarayıcıda
@@ -44,54 +45,55 @@ function showInfo(){
 async function save(){
   const btn = $('#shSave'); btn.disabled = true;
   try{
-    if(!mons.length) throw new Error('The inventory is empty.');
+    if(!mons.length) throw new Error(t('The inventory is empty.'));
     const data = await pack(mons.map(exportMon)), s = read();
-    if(s){ await call('PUT', '/' + s.code, { data }, s.key); showMessage('ok', `✔ List updated (code ${s.code}).`); }
+    if(s){ await call('PUT', '/' + s.code, { data }, s.key); showMessage('ok', t('✔ List updated (code {code}).', { code: s.code })); }
     else{
       const code = $('#shCode').value.trim().toLowerCase();
-      if(code && !CODE_RE.test(code)) throw new Error('Code must be 4–24 characters: a–z, 0–9, "-".');
+      if(code && !CODE_RE.test(code)) throw new Error(t('Code must be 4–24 characters: a–z, 0–9, "-".'));
       const r = await call('POST', '', { data, code: code || undefined });
       write({ code: r.code, key: r.key });
-      showMessage('ok', `✔ Saved. Code: ${r.code}`);
+      showMessage('ok', t('✔ Saved. Code: {code}', { code: r.code }));
     }
     showInfo();
   }catch(e){
     logEvent('error', 'share save', e);
-    showMessage('err', e.status === 409 ? '✖ That code is already taken. Choose another.' : '✖ ' + e.message);
+    showMessage('err', e.status === 409 ? t('✖ That code is already taken. Choose another.') : '✖ ' + e.message);
   }finally{ btn.disabled = false; }
 }
 
 const askMode = n => new Promise(res => {
   if(!mons.length) return res('replace');
-  const d = $('#shDlg'); $('#shDlgTxt').textContent = `This list has ${n} Pokémon. You already have ${mons.length} in your inventory.`;
+  const d = $('#shDlg'); $('#shDlgTxt').textContent = t('This list has {n} Pokémon. You already have {m} in your inventory.', { n, m: mons.length });
   d.addEventListener('close', () => res(d.returnValue), { once: true }); d.showModal();
 });
 
 async function load(input){
   const raw = String(input).trim(), code = (raw.match(/[?&]c=([a-z0-9-]+)/i)?.[1] ?? raw).toLowerCase();
-  if(!CODE_RE.test(code)) return showMessage('err', '✖ Enter a valid code or link.');
+  if(!CODE_RE.test(code)) return showMessage('err', t('✖ Enter a valid code or link.'));
   try{
     const { data } = await call('GET', '/' + code);
     const list = await unpack(data);
-    if(!Array.isArray(list)) throw new Error('Invalid list data.');
+    if(!Array.isArray(list)) throw new Error(t('Invalid list data.'));
     const mode = await askMode(list.length);
     if(mode !== 'merge' && mode !== 'replace') return;
     if(mode === 'replace') clearAll();
     const r = addMons(list.map(d => Object.assign({ evs: {}, ivs: {}, moves: [], loading: true }, d)));
-    showMessage('ok', `✔ ${r.added} Pokémon loaded from ${code}` + (r.skipped ? ` (${r.skipped} already present)` : '') + '.');
+    showMessage('ok', r.skipped ? t('✔ {n} Pokémon loaded from {code} ({s} already present).', { n: r.added, code, s: r.skipped }) : t('✔ {n} Pokémon loaded from {code}.', { n: r.added, code }));
   }catch(e){
     logEvent('error', 'share load', e);
-    showMessage('err', e.status === 404 ? '✖ No list found for that code.' : '✖ ' + e.message);
+    showMessage('err', e.status === 404 ? t('✖ No list found for that code.') : '✖ ' + e.message);
   }
 }
 
 export function initShare(){
   showInfo();
+  addEventListener('langchange', showInfo);
   $('#shSave').addEventListener('click', save);
   $('#shGo').addEventListener('click', () => load($('#shLoad').value));
   $('#shLoad').addEventListener('keydown', e => { if(e.key === 'Enter') load(e.target.value); });
   $('#shInfo').addEventListener('click', e => {
-    if(e.target.id === 'shCopy'){ const l = linkFor(read().code); navigator.clipboard?.writeText(l).then(() => showMessage('ok', '✔ Link copied.'), () => showMessage('err', '✖ Could not copy: ' + l)); }
+    if(e.target.id === 'shCopy'){ const l = linkFor(read().code); navigator.clipboard?.writeText(l).then(() => showMessage('ok', t('✔ Link copied.')), () => showMessage('err', t('✖ Could not copy: {l}', { l }))); }
     else if(e.target.id === 'shUnlink'){ write(null); showInfo(); }
   });
   const c = new URLSearchParams(location.search).get('c'); // bağlantıyla gelen liste

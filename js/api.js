@@ -1,5 +1,6 @@
 /* Veri katmanı: oyun verisi (gamedata/, bkz. game.js) + yerel sprite önbelleği. PokéAPI kullanılmaz. */
 import { game } from './game.js';
+import { t } from './i18n.js';
 
 /* Kalıcı önbellek (Cache API): PokéAPI cevapları ve sprite görselleri sayfa yenilense de saklanır.
    Cache API yoksa/başarısız olursa her şey eskisi gibi ağdan gelir. */
@@ -85,8 +86,8 @@ export async function natureInfo(name){
 export function natDescOf(ni){
   const inc = prettyStat(ni.inc), dec = prettyStat(ni.dec);
   return (ni.inc && ni.dec)
-    ? `+${inc} / −${dec}: ${inc} statını %10 arttırır, ${dec} statını %10 azaltır.`
-    : 'Nötr nature — hiçbir statı etkilemez.';
+    ? t('+{inc} / −{dec}: Raises {inc} by 10%, lowers {dec} by 10%.', { inc, dec })
+    : t('Neutral nature — affects no stat.');
 }
 export async function natureDesc(name){
   return natDescOf(await natureInfo(name));

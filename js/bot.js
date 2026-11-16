@@ -1,9 +1,10 @@
 /* ProHelper bot ile yerel bağlantı (127.0.0.1:47831-47835): durum rozeti, "Botdan al", bot -> site gönderimi */
 import { parsePcExport, runImport } from './import.js';
+import { t } from './i18n.js';
 
 const PORTS = [47831, 47832, 47833, 47834, 47835];
 const $ = id => document.getElementById(id);
-let port = null, busy = false, timer = null, cooldownUntil = 0;
+let port = null, busy = false, timer = null, cooldownUntil = 0, lastD = null;
 
 const url = path => `http://127.0.0.1:${port}${path}`;
 const get = async (path, ms = 8000) => (await fetch(url(path), { signal: AbortSignal.timeout(ms) })).json();
@@ -21,7 +22,8 @@ async function ping(){
 }
 
 function show(d){
-  $('botBadge').textContent = d ? `Bot bağlı (PC: ${d.pc})` : 'Bot bulunamadı';
+  lastD = d;
+  $('botBadge').textContent = d ? t('Bot connected (PC: {pc})', { pc: d.pc }) : t('Bot not found');
   $('botBadge').classList.toggle('on', !!d);
   $('btnBot').disabled = !d || busy;
 }
@@ -38,7 +40,7 @@ async function doImport(path, ack){
     if(ack && exp.id) await fetch(url('/outbox/ack?id=' + encodeURIComponent(exp.id)), { method: 'POST', signal: AbortSignal.timeout(5000) }).catch(() => {});
   }catch(e){
     cooldownUntil = Date.now() + 30000; // hata sonrası otomatik tekrar denemeden önce bekle
-    alert('Bot import failed: ' + e.message);
+    alert(t('Bot import failed: {err}', { err: e.message }));
   }finally{ busy = false; }
 }
 
@@ -54,5 +56,6 @@ async function poll(){
 export function initBot(){
   $('btnBot').addEventListener('click', () => doImport('/pc', false));
   document.addEventListener('visibilitychange', () => { if(!document.hidden) poll(); });
+  addEventListener('langchange', () => show(lastD));
   poll();
 }

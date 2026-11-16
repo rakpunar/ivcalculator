@@ -12,16 +12,17 @@
 <div class="layout">
   <!-- SOL: form -->
   <div class="panel">
+    <div class="langrow"><span id="langSw"></span></div>
     <h2>Add Pokémon</h2>
-    <textarea id="paste" placeholder="Ör.&#10;Mankey&#10;Level: 22&#10;Adamant Nature&#10;Ability: Anger Point&#10;EVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe&#10;IVs: 15 HP / 27 Atk / 4 Def / 29 SpA / 28 SpD / 11 Spe&#10;- Cross Chop&#10;- Swagger&#10;- Pursuit&#10;- Seismic Toss"></textarea>
+    <textarea id="paste" placeholder="Mankey&#10;Level: 22&#10;Adamant Nature&#10;Ability: Anger Point&#10;EVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe&#10;IVs: 15 HP / 27 Atk / 4 Def / 29 SpA / 28 SpD / 11 Spe&#10;- Cross Chop&#10;- Swagger&#10;- Pursuit&#10;- Seismic Toss"></textarea>
     <div class="shotrow">
       <button class="mini" id="btnClip" title="Read the image currently in your clipboard (same as pressing Ctrl+V)">📋 Paste image from clipboard</button>
       <button class="mini" id="btnShot" title="Choose an image file">📷 Image file…</button>
     </div>
-    <div class="shothint">Tip: copy a screenshot, then press <kbd>Ctrl</kbd>+<kbd>V</kbd> anywhere on this page. You can also drop an image on the text box.</div>
+    <div class="shothint" data-i18n-html="tip">Tip: copy a screenshot, then press <kbd>Ctrl</kbd>+<kbd>V</kbd> anywhere on this page. You can also drop an image on the text box.</div>
     <div class="shotrow botrow">
-      <span id="botBadge" class="botbadge">Bot bulunamadı</span>
-      <button class="mini" id="btnBot" disabled title="Import the whole PC from the ProHelper bot running on this computer">🤖 Botdan al</button>
+      <span id="botBadge" class="botbadge">Bot not found</span>
+      <button class="mini" id="btnBot" disabled title="Import the whole PC from the ProHelper bot running on this computer">🤖 Import from bot</button>
     </div>
     <input type="file" id="shotFile" accept="image/*" hidden>
     <button class="btn-add" id="btnAdd">＋ Add to Inventory</button>
@@ -91,15 +92,16 @@
     <div class="tiny-rows">
       <div class="tiny-row"><span>Ability</span><span class="tip ability"></span></div>
       <div class="tiny-row"><span>Total IV</span><span class="iv-sum"></span></div>
+      <div class="tiny-row"><span>Hidden Power</span><span class="hp-type"></span></div>
     </div>
-    <div class="ivbadge" title="IV toplamı (max 186)"><span class="tv">0</span> <small>IV</small></div>
+    <div class="ivbadge" title="IV total (max 186)"><span class="tv">0</span> <small>IV</small></div>
     <div class="ctrl"></div>
   </div>
 </template>
 
 <!-- Modal şablonu -->
 <template id="tpl-modal">
-  <button class="close" title="Kapat">✕</button>
+  <button class="close" title="Close">✕</button>
   <div class="m-left">
     <div class="m-head">
       <img class="sprite" width="170" height="170" alt="">
@@ -144,6 +146,7 @@
   </div>
   <div class="m-footer">
     <div class="footerline fAbility"><b>Ability:</b> <span class="fad">loading…</span></div>
+    <div class="footerline fHidden"><b>Hidden Power:</b> <span class="hpv"></span></div>
     <div class="footerline fNature"><b>Nature:</b> <span class="fnd">loading…</span></div>
   </div>
 </template>
