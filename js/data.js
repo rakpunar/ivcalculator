@@ -1,5 +1,8 @@
 /* Sabitler ve paletler — tek doğruluk kaynağı */
 
+// Nature adları (OCR düzeltmesi için)
+export const NATURES = ['Hardy','Lonely','Brave','Adamant','Naughty','Bold','Docile','Relaxed','Impish','Lax','Timid','Hasty','Serious','Jolly','Naive','Modest','Mild','Quiet','Bashful','Rash','Calm','Gentle','Sassy','Careful','Quirky'];
+
 // İç stat anahtarları (parse + hesaplama)
 export const KEYS = ['HP','Atk','Def','SpA','SpD','Spe'];
 

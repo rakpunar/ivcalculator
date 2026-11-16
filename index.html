@@ -14,6 +14,12 @@
   <div class="panel">
     <h2>Add Pokémon</h2>
     <textarea id="paste" placeholder="Ör.&#10;Mankey&#10;Level: 22&#10;Adamant Nature&#10;Ability: Anger Point&#10;EVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe&#10;IVs: 15 HP / 27 Atk / 4 Def / 29 SpA / 28 SpD / 11 Spe&#10;- Cross Chop&#10;- Swagger&#10;- Pursuit&#10;- Seismic Toss"></textarea>
+    <div class="shotrow">
+      <button class="mini" id="btnClip" title="Read the image currently in your clipboard (same as pressing Ctrl+V)">📋 Paste image from clipboard</button>
+      <button class="mini" id="btnShot" title="Choose an image file">📷 Image file…</button>
+    </div>
+    <div class="shothint">Tip: copy a screenshot, then press <kbd>Ctrl</kbd>+<kbd>V</kbd> anywhere on this page. You can also drop an image on the text box.</div>
+    <input type="file" id="shotFile" accept="image/*" hidden>
     <button class="btn-add" id="btnAdd">＋ Add to Inventory</button>
     <div class="msg" id="msg"></div>
     <div class="status" id="status"></div>
