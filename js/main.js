@@ -76,7 +76,7 @@ paste.addEventListener('drop', e => { const f = e.dataTransfer?.files?.[0]; if(f
 
 /* Önbelleği atlayarak tüm site dosyalarını yeniden indirir, sonra sayfayı yeniler (envanter localStorage'da kalır).
    shortcut: dosya listesi elle tutuluyor, yeni dosya eklenince buraya da eklenmeli. */
-const SITE_FILES = ['./', 'style.css', 'js/main.js', 'js/ocr.js', 'js/log.js', 'js/sprites.js', 'js/game.js', 'js/import.js', 'js/bot.js', 'js/share.js', 'js/i18n.js', 'js/api.js', 'js/data.js', 'js/parser.js', 'js/state.js', 'js/stats.js', 'js/ui.js'];
+const SITE_FILES = ['./', 'style.css', 'js/main.js', 'js/ocr.js', 'js/log.js', 'js/sprites.js', 'js/game.js', 'js/import.js', 'js/bot.js', 'js/share.js', 'js/dialog.js', 'js/i18n.js', 'js/api.js', 'js/data.js', 'js/parser.js', 'js/state.js', 'js/stats.js', 'js/ui.js'];
 const btnReload = document.getElementById('btnReload');
 btnReload.addEventListener('click', async () => {
   btnReload.disabled = true; btnReload.textContent = t('Updating…');

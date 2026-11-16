@@ -4,6 +4,7 @@ import { natureDesc, natDescOf, moveMeta, imgSrc } from './api.js';
 import { PLACEHOLDER, cropSprite } from './sprites.js';
 import { calcMon, effLevel, hiddenPower, HP_TYPES } from './stats.js';
 import { t } from './i18n.js';
+import { confirmBox } from './dialog.js';
 import { mons, on, setView, bulkView, stageAvailable, megaAvailable, setSel, selectAll, refreshView, setEv, resetEvs, evTotal, evsChanged, EV_MAX, EV_TOTAL } from './state.js';
 
 const $  = sel => document.querySelector(sel);
@@ -440,7 +441,7 @@ export function initUI({ remove, clearAll }){
   clearAllRef = clearAll;
   $('#btnClear').addEventListener('click', () => {
     if(!mons.length) return;
-    if(confirm(t('All Pokémon will be removed from the inventory. Are you sure?'))) clearAllRef();
+    confirmBox(t('All Pokémon will be removed from the inventory. Are you sure?'), { ok: 'Clear All', danger: true }).then(y => { if(y) clearAllRef(); });
   });
   overlay.addEventListener('click', e => { if(e.target === overlay) closeModal(); });
   document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal(); });

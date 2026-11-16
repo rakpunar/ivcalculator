@@ -6,6 +6,7 @@ import { mons, on, exportMon, setInventory, flushSave } from './state.js';
 import { showMessage as msg } from './ui.js';
 import { logEvent } from './log.js';
 import { t } from './i18n.js';
+import { confirmBox } from './dialog.js';
 
 const API = 'https://ivcalc-share.r-akpunar.workers.dev/api/lists';
 const LS = 'ivcalc.share.v1';             // { code, key?, t } — bu tarayıcının bağlı olduğu liste
@@ -89,13 +90,7 @@ async function pull(force){
 }
 
 /* ---- bağlan / ayrıl ---- */
-const ask = code => new Promise(res => {
-  const d = $('#shDlg'); $('#shDlgTxt').textContent = t('Open the shared list "{code}"? This browser will show and edit that list instead of its own inventory. Your own inventory stays saved here and comes back when you unlink.', { code });
-  const fin = ok => { d.removeEventListener('close', onClose); d.removeEventListener('click', onClick); res(ok); };
-  const onClose = () => fin(d.returnValue === 'open');
-  const onClick = e => { const b = e.target.closest('button'); if(b) fin(b.value === 'open'); }; // 'close' olayı her ortamda güvenilir değil
-  d.addEventListener('close', onClose); d.addEventListener('click', onClick); d.showModal();
-});
+const ask = code => confirmBox(t('Open the shared list "{code}"? This browser will show and edit that list instead of its own inventory. Your own inventory stays saved here and comes back when you unlink.', { code }), { ok: 'Open list' });
 
 async function openCode(input){
   const raw = String(input).trim(), code = (raw.match(/[?&]c=([a-z0-9-]+)/i)?.[1] ?? raw).toLowerCase();

@@ -1,6 +1,7 @@
 /* ProHelper bot ile yerel bağlantı (127.0.0.1:47831-47835): durum rozeti, "Botdan al", bot -> site gönderimi */
 import { parsePcExport, runImport } from './import.js';
 import { t } from './i18n.js';
+import { noticeBox } from './dialog.js';
 
 const PORTS = [47831, 47832, 47833, 47834, 47835];
 const $ = id => document.getElementById(id);
@@ -40,7 +41,7 @@ async function doImport(path, ack){
     if(ack && exp.id) await fetch(url('/outbox/ack?id=' + encodeURIComponent(exp.id)), { method: 'POST', signal: AbortSignal.timeout(5000) }).catch(() => {});
   }catch(e){
     cooldownUntil = Date.now() + 30000; // hata sonrası otomatik tekrar denemeden önce bekle
-    alert(t('Bot import failed: {err}', { err: e.message }));
+    noticeBox(t('Bot import failed: {err}', { err: e.message }));
   }finally{ busy = false; }
 }
 
