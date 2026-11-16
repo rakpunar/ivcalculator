@@ -1,5 +1,6 @@
 /* ProHelper PC dışa aktarımı ({"format":"prohelper-pc",...}) → envanter kayıtları */
 import { KEYS } from './data.js';
+import { addMons, on } from './state.js';
 
 /** Metin bu formatta mı? (yalnızca ucuz önkontrol + parse; değilse null) */
 export function parsePcExport(text){
@@ -30,4 +31,35 @@ export function pcToMons(exp){
       tera: null, uid: p.uid != null ? String(p.uid) : null, loading: true });
   }
   return { mons: out, bad };
+}
+
+/* ---------- toplu içe aktarma: ekranı kilitler, ilerleme gösterir, bitince özet verir ---------- */
+const $ = id => document.getElementById(id);
+let imp = null; // {total, done, resolve, summary}
+
+on('mon', m => { if(imp?.total){ imp.done++; $('lockBar').value = imp.done; $('lockTxt').textContent = `${imp.done} / ${imp.total} — ${m.name}`; } });
+on('queue', remaining => { if(imp?.total && !remaining) finish(); });
+
+function finish(){
+  const i = imp; imp = null;
+  $('lockTitle').textContent = 'Import finished';
+  $('lockBar').value = $('lockBar').max;
+  $('lockTxt').textContent = i.summary;
+  $('lockOk').hidden = false;
+  $('lockOk').onclick = () => { $('lock').hidden = true; i.resolve(); };
+}
+
+/** exp = "prohelper-pc" zarfı. Kullanıcı OK'a basınca çözülür. Zaten bir içe aktarma sürüyorsa null döner. */
+export function runImport(exp){
+  if(imp) return null;
+  const { mons: list, bad } = pcToMons(exp);
+  return new Promise(resolve => {
+    imp = { total: 0, done: 0, resolve, summary: '' };
+    $('lockOk').hidden = true; $('lockTitle').textContent = 'Importing…'; $('lockTxt').textContent = 'Starting…';
+    $('lockBar').value = 0; $('lockBar').max = Math.max(1, list.length); $('lock').hidden = false;
+    const { added, skipped } = addMons(list);
+    imp.summary = `Added: ${added}\nSkipped (already in inventory): ${skipped}\nSkipped (invalid): ${bad}`;
+    if(!added) return finish();
+    imp.total = added; $('lockBar').max = added;
+  });
 }

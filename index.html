@@ -19,11 +19,14 @@
       <button class="mini" id="btnShot" title="Choose an image file">📷 Image file…</button>
     </div>
     <div class="shothint">Tip: copy a screenshot, then press <kbd>Ctrl</kbd>+<kbd>V</kbd> anywhere on this page. You can also drop an image on the text box.</div>
+    <div class="shotrow botrow">
+      <span id="botBadge" class="botbadge">Bot bulunamadı</span>
+      <button class="mini" id="btnBot" disabled title="Import the whole PC from the ProHelper bot running on this computer">🤖 Botdan al</button>
+    </div>
     <input type="file" id="shotFile" accept="image/*" hidden>
     <button class="btn-add" id="btnAdd">＋ Add to Inventory</button>
     <div class="msg" id="msg"></div>
     <div class="status" id="status"></div>
-    <progress id="impbar" max="1" value="0" hidden></progress>
     <button class="mini" id="btnReload" title="Reload the newest version of the site (your inventory is kept)">↻ Update site</button>
   </div>
 
@@ -128,5 +131,13 @@
 </template>
 
 <script type="module" src="js/main.js"></script>
+  <div id="lock" hidden>
+    <div class="lockbox">
+      <h3 id="lockTitle">Importing…</h3>
+      <progress id="lockBar" max="1" value="0"></progress>
+      <div id="lockTxt"></div>
+      <button class="btn-add" id="lockOk" hidden>OK</button>
+    </div>
+  </div>
 </body>
 </html>

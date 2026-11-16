@@ -3,10 +3,35 @@
 import { STAT_API_TO_KEY } from './data.js';
 import { slugify } from './parser.js';
 
+/* PokéAPI dostu istek: en fazla 2 paralel, istek başlangıçları arası ~200 ms, 429/5xx/ağ hatasında üstel geri çekilmeyle tekrar */
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+let inflight = 0, nextStart = 0;
+const waiters = [];
+async function acquire(){
+  while(inflight >= 2) await new Promise(r => waiters.push(r));
+  inflight++;
+  const now = Date.now(), at = Math.max(now, nextStart);
+  nextStart = at + 200;
+  if(at > now) await sleep(at - now);
+}
+const release = () => { inflight--; waiters.shift()?.(); };
+
 export async function fetchJSON(url){
-  const r = await fetch(url);
-  if(!r.ok) throw new Error('HTTP ' + r.status);
-  return await r.json();
+  let err;
+  for(let i = 0; i < 4; i++){
+    await acquire();
+    let wait = 600 * 2 ** i;
+    try{
+      const r = await fetch(url);
+      if(r.ok) return await r.json();
+      err = new Error('HTTP ' + r.status);
+      if(r.status !== 429 && r.status < 500) throw err; // 404 vb. tekrar denenmez
+      wait = Math.max(wait, (+r.headers.get('Retry-After') || 0) * 1000);
+    }catch(e){ if(e === err) throw e; err = e; } // ağ hatası: tekrar dene
+    finally{ release(); }
+    await sleep(wait);
+  }
+  throw err;
 }
 
 function prettyStat(apiName){

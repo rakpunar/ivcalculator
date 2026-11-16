@@ -1,7 +1,8 @@
 /* Bağlantı: butonlar + modül başlatma */
 import { parseMon } from './parser.js';
-import { addMon, addMons, removeMon, clearAll, loadInventory, on } from './state.js';
-import { parsePcExport, pcToMons } from './import.js';
+import { addMon, removeMon, clearAll, loadInventory } from './state.js';
+import { parsePcExport, runImport } from './import.js';
+import { initBot } from './bot.js';
 import { initUI, showMessage } from './ui.js';
 import { screenshotToText } from './ocr.js';
 
@@ -61,23 +62,10 @@ btnClip.addEventListener('click', async () => {
   }
 });
 shotFile.addEventListener('change', () => { readShot(shotFile.files[0]); shotFile.value = ''; });
-/* ProHelper PC JSON: yapıştırılınca (sayfada veya kutuda) otomatik algılanır, toplu eklenir, ilerleme çubuğu gösterilir */
-const impbar = document.getElementById('impbar');
-let impTotal = 0;
-on('queue', remaining => {
-  if(!impTotal) return;
-  impbar.value = impTotal - remaining; impbar.max = impTotal;
-  if(!remaining){ impTotal = 0; impbar.hidden = true; }
-});
-function importPc(exp){
-  const { mons: list, bad } = pcToMons(exp);
-  const { added, skipped } = addMons(list);
-  showMessage({ type:'ok', text:`✔ ${added} Pokémon imported` + (skipped ? `, ${skipped} already in inventory (skipped)` : '') + (bad ? `, ${bad} invalid (skipped)` : '') + ' — fetching details in background.' });
-  if(added){ impTotal = added; impbar.max = added; impbar.value = 0; impbar.hidden = false; }
-}
+/* ProHelper PC JSON: yapıştırılınca (sayfada veya kutuda) otomatik algılanır, toplu eklenir */
 document.addEventListener('paste', e => {
   const exp = parsePcExport(e.clipboardData?.getData('text'));
-  if(exp){ e.preventDefault(); importPc(exp); }
+  if(exp){ e.preventDefault(); runImport(exp); }
 });
 document.addEventListener('paste', e => { const f = [...(e.clipboardData?.files ?? [])].find(f => f.type.startsWith('image/')); if(f){ e.preventDefault(); readShot(f); } });
 paste.addEventListener('dragover', e => e.preventDefault());
@@ -85,7 +73,7 @@ paste.addEventListener('drop', e => { const f = e.dataTransfer?.files?.[0]; if(f
 
 /* Önbelleği atlayarak tüm site dosyalarını yeniden indirir, sonra sayfayı yeniler (envanter localStorage'da kalır).
    shortcut: dosya listesi elle tutuluyor, yeni dosya eklenince buraya da eklenmeli. */
-const SITE_FILES = ['./', 'style.css', 'js/main.js', 'js/ocr.js', 'js/import.js', 'js/api.js', 'js/data.js', 'js/parser.js', 'js/state.js', 'js/stats.js', 'js/ui.js'];
+const SITE_FILES = ['./', 'style.css', 'js/main.js', 'js/ocr.js', 'js/import.js', 'js/bot.js', 'js/api.js', 'js/data.js', 'js/parser.js', 'js/state.js', 'js/stats.js', 'js/ui.js'];
 const btnReload = document.getElementById('btnReload');
 btnReload.addEventListener('click', async () => {
   btnReload.disabled = true; btnReload.textContent = 'Updating…';
@@ -95,3 +83,4 @@ btnReload.addEventListener('click', async () => {
 
 initUI({ remove: removeMon, clearAll });
 loadInventory();
+initBot();
