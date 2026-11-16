@@ -24,11 +24,11 @@ const cleanName = n => String(n).replace(/♀/g, '-f').replace(/♂/g, '-m').rep
 export function pcToMons(exp){
   const out = []; let bad = 0;
   for(const p of exp.pokemon){
-    const base = cleanName(p?.name ?? ''), name = p?.form ? `${base}-${cleanName(p.form)}` : base;
+    const base = cleanName(p?.name ?? ''), name = typeof p?.form === 'string' && p.form ? `${base}-${cleanName(p.form)}` : base;
     if(!name || !p.nature || !p.ability){ bad++; continue; }
     out.push({ name, level: +p.level || null, ability: String(p.ability), nature: String(p.nature),
       evs: stats(p.evs), ivs: stats(p.ivs), moves: (p.moves ?? []).filter(Boolean).map(String),
-      tera: null, uid: p.uid != null ? String(p.uid) : null, loading: true });
+      tera: null, dex: p.dex ?? null, gform: Number.isInteger(p.form) ? p.form : 0, shiny: !!p.shiny, uid: p.uid != null ? String(p.uid) : null, loading: true });
   }
   return { mons: out, bad };
 }

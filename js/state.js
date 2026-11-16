@@ -1,7 +1,8 @@
 /* Envanter durumu + arka plan veri kuyruğu + localStorage kalıcılığı */
 import { logEvent } from './log.js';
 import { LS_KEY } from './data.js';
-import { abilityDesc, natureInfo, natDescOf, resolveView, loadMoveMeta, spriteURL, artURL } from './api.js';
+import { abilityDesc, natureInfo, natDescOf, resolveView, loadMoveMeta } from './api.js';
+import { spriteList } from './sprites.js';
 import { calcMon } from './stats.js';
 
 export const mons = [];
@@ -73,6 +74,7 @@ function processQueue(){
  *  Art arda çağrılırsa yalnızca en sonuncu sonucu uygulanır. */
 export async function refreshView(mon){
   const tok = mon._t = {};
+  mon.imgs ??= await spriteList(mon, null); // oyun kimliği (dex) varsa PokéAPI verisi olmasa da sprite gösterilir
   const r = await resolveView(mon);
   if(mon._t !== tok) return;
   // gösterilecek ability: mega ise megaya ait; değilse kullanıcınınki (türde yoksa "Unknown")
@@ -84,8 +86,7 @@ export async function refreshView(mon){
   mon.abName = abName; mon.abDesc = abDesc;
   if(r.autoForm && !mon.view.form) mon.view.form = r.autoForm; // ability'den anlaşılan form kalıcı olsun
   mon.eff = r; mon.opts = r.opts; mon.base = r.base; mon.types = r.base.types;
-  mon.sprite = spriteURL(r.base.id); // eski kayıtlı pokemondb URL'lerini de ezer
-  mon.art    = artURL(r.base.id);
+  mon.imgs = await spriteList(mon, r.base.species); // yerel sprite adayları (PokéAPI görseli kullanılmaz)
   try{ mon.calc = await calcMon(mon); }catch(e){ mon.calc = null; }
 }
 
@@ -169,7 +170,7 @@ function saveNow(){
   try{
     const data = mons.map(m => ({
       name:m.name, level:m.level, ability:m.ability, nature:m.nature,
-      evs:m.evs, ivs:m.ivs, moves:m.moves, tera:m.tera ?? null, uid:m.uid ?? null,
+      evs:m.evs, ivs:m.ivs, moves:m.moves, tera:m.tera ?? null, uid:m.uid ?? null, dex:m.dex ?? null, gform:m.gform ?? 0, shiny:!!m.shiny,
       view:m.view, sel:!!m.sel // sprite/art/moveMeta kaydedilmez: PokéAPI'den yeniden türetilir (kota için)
     }));
     localStorage.setItem(LS_KEY, JSON.stringify(data));

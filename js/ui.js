@@ -1,6 +1,7 @@
 /* UI: envanter grid (template), modal (template), tooltip, mesajlar */
 import { STAT_ORDER, STAT_COLORS, STATS, CAT_ICON } from './data.js';
 import { natureDesc, moveMeta, imgSrc } from './api.js';
+import { PLACEHOLDER } from './sprites.js';
 import { calcMon, effLevel } from './stats.js';
 import { mons, on, setView, bulkView, stageAvailable, megaAvailable, setSel, selectAll, refreshView } from './state.js';
 
@@ -24,10 +25,13 @@ function typeChips(types){
   return types.map(t => `<span class="type-icon t-${t}" title="${t[0].toUpperCase()+t.slice(1)} type">${t.toUpperCase()}</span>`).join('');
 }
 
-function setImg(img, primary, fallback){
+/* Yerel sprite adaylarını sırayla dener; hiçbiri yüklenmezse yer tutucu */
+function setImg(img, cands){
+  const list = (cands ?? []).filter(Boolean); let i = 0;
   img.loading = 'lazy';
-  img.onerror = () => { img.onerror = null; img.src = fallback || ''; };
-  imgSrc(primary || fallback || '').then(src => { img.src = src; });
+  const next = () => { if(i >= list.length){ img.onerror = null; img.src = PLACEHOLDER; return; } imgSrc(list[i++]).then(src => { img.src = src; }); };
+  img.onerror = next;
+  next();
 }
 
 function colorForValue(v, sorted){
@@ -81,7 +85,7 @@ export function renderGrid(){
     node.querySelector('.ctrl').innerHTML = ctrlHTML(m, i);
     node.classList.toggle('picked', !!m.sel);
     node.querySelector('.sel input').checked = !!m.sel;
-    setImg(node.querySelector('img'), m.sprite, m.art);
+    setImg(node.querySelector('img'), m.imgs);
     node.querySelector('.del').addEventListener('click', e => { e.stopPropagation(); removeMonRef(i); });
     node.querySelector('.lvl').addEventListener('mouseenter', e => showNatureTip(e, m));
     node.querySelector('.lvl').addEventListener('mouseleave', hideTip);
@@ -189,7 +193,7 @@ function renderModal(m){
   root.querySelector('.thlv').textContent = `Lv.${effLevel(m)}`;
   root.querySelector('.m-ctrl').innerHTML = ctrlHTML(m, 'M');
   root.querySelector('.lvl-extra').textContent = m.tera ? 'Tera: ' + m.tera : '';
-  setImg(root.querySelector('img'), m.art, m.sprite);
+  setImg(root.querySelector('img'), m.imgs);
   root.querySelector('.tv').textContent = tv(m);
   root.querySelector('.tvsum').textContent = tv(m);
   root.querySelector('.tvbar').style.width = (tv(m)/186*100).toFixed(1) + '%';

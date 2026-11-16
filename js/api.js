@@ -132,14 +132,25 @@ const cached = (cache, key, fn) => cache[key] ??= fn().catch(e => { delete cache
 const API = 'https://pokeapi.co/api/v2/';
 const pkCache = {}, spCache = {}, chCache = {}, infoCache = {}, baseCache = {};
 
-const pokemonJSON = slug => cached(pkCache, slug, () => fetchJSON(API + 'pokemon/' + slug));
+/* Bazı türlerin /pokemon/<tür> adresi yoktur (morpeko → morpeko-full-belly, mimikyu → mimikyu-disguised, eiscue, indeedee…):
+   404'te türün varsayılan formuna düşülür. */
+const pokemonJSON = slug => cached(pkCache, slug, async () => {
+  try{ return await fetchJSON(API + 'pokemon/' + slug); }
+  catch(e){
+    if(e.message !== 'HTTP 404') throw e;
+    const sp = await fetchJSON(API + 'pokemon-species/' + slug).catch(() => null);
+    const def = sp?.varieties.find(v => v.is_default)?.pokemon.name;
+    if(!def || def === slug) throw e;
+    return fetchJSON(API + 'pokemon/' + def);
+  }
+});
 
 /** slug → {stats, types, id} */
 export const baseStats = name => cached(baseCache, slugify(name), async () => {
   const j = await pokemonJSON(slugify(name));
   const b = {};
   j.stats.forEach(s => { const k = STAT_API_TO_KEY[s.stat.name]; if(k) b[k] = s.base_stat; });
-  return { stats:b, types:j.types.map(t => t.type.name), id:j.id };
+  return { stats:b, types:j.types.map(t => t.type.name), id:j.id, species:+j.species.url.match(/(\d+)\/?$/)[1] };
 });
 
 /* ---------- tür (species): formlar, mega, evrim zinciri ---------- */
@@ -177,8 +188,9 @@ const speciesInfo = slug => cached(infoCache, slug, async () => {
  *  view = {stage:'current'|'final', mega:bool, form, finalPick, megaPick, lvl100}
  *  döner {slug, label, base, opts:{forms, finals, megas, hasMega}} */
 export async function resolveView(mon){
-  const own = slugify(mon.name), v = mon.view;
-  const { self, finals } = await speciesInfo(own);
+  const own0 = slugify(mon.name), v = mon.view;
+  const { self, finals } = await speciesInfo(own0);
+  const own = own0 === self.name ? self.def : own0; // tür adı = varsayılan formu (morpeko → morpeko-full-belly)
   const forms = [...new Set([own, ...self.forms])];
   let form = forms.includes(v.form) ? v.form : own;
   // ability doğrulama: kullanıcının Pokémon'unun (seçili formun) gerçek ability listesi
