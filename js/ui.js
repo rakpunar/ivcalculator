@@ -67,7 +67,8 @@ function ctrlHTML(m, i){ // i: radyo grup adı eki (kart indeksi veya 'M' = moda
 
 /* ---------- filtre / sıralama (yalnızca görünüm; envanter sırası değişmez) ---------- */
 const IVK = ['HP','Atk','Def','SpA','SpD','Spe'];
-const F = { q:'', nature:'', type:'', minIV:0, minLv:0, perfect:0, shiny:false, sort:'', dir:1 };
+const F = { q:'', nature:'', type:'', minIV:0, minLv:0, perfect:0, shiny:false, form:false, sort:'', dir:1 };
+const isForm = m => +m.dex >= 3000 || +m.gform > 0 || (!!m.eff && !m.eff.isMega && m.eff.id !== m.eff.base?.species); // alternatif form (bölgesel, shadow, baby, event…)
 const perfect = m => IVK.filter(k => STATS.get(m.ivs, k) >= 31).length;
 const SORTS = { name:m => (m.eff?.label ?? m.name).toLowerCase(), level:m => m.level ?? 0, nature:m => m.nature ?? '', iv:tv, perfect,
   ...Object.fromEntries(IVK.map(k => [k.toLowerCase(), m => STATS.get(m.ivs, k)])) };
@@ -76,6 +77,7 @@ const passes = m => {
   if(F.type && !(m.types ?? []).includes(F.type)) return false;
   if(tv(m) < F.minIV || (m.level ?? 0) < F.minLv || perfect(m) < F.perfect) return false;
   if(F.shiny && !m.shiny) return false;
+  if(F.form && !isForm(m)) return false;
   if(F.q){ const h = [m.name, m.eff?.label, m.nature, m.ability, m.abName, ...(m.moves ?? [])].join(' ').toLowerCase();
     return F.q.split(/\s+/).every(t => h.includes(t)); }
   return true;
@@ -104,20 +106,21 @@ function initFilter(){
       <select id="ftype" class="pick" aria-label="Type">${opt('', 'Type: any')}${types.map(n => opt(n, pretty(n))).join('')}</select>
       ${num('fiv', 'IV ≥', 186, F.minIV)}${num('fpf', '31s ≥', 6, F.perfect)}${num('flv', 'Lv ≥', 100, F.minLv)}
       <label class="chip"><input id="fsh" type="checkbox"${F.shiny ? ' checked' : ''}><span>★ Shiny</span></label>
+      <label class="chip"><input id="ffm" type="checkbox"${F.form ? ' checked' : ''}><span>◆ Forms</span></label>
       <span class="f-end"><span id="fcnt"></span><button class="mini" id="fclr">Reset</button></span>
     </div>`;
   $('#fnat').value = F.nature; $('#ftype').value = F.type; $('#fsort').value = F.sort;
 }
 function initFilterEvents(){
   const set = () => { Object.assign(F, { q: $('#fq').value.trim().toLowerCase(), nature: $('#fnat').value, type: $('#ftype').value,
-    minIV: +$('#fiv').value || 0, perfect: +$('#fpf').value || 0, minLv: +$('#flv').value || 0, shiny: $('#fsh').checked, sort: $('#fsort').value }); renderGrid(); };
+    minIV: +$('#fiv').value || 0, perfect: +$('#fpf').value || 0, minLv: +$('#flv').value || 0, shiny: $('#fsh').checked, form: $('#ffm').checked, sort: $('#fsort').value }); renderGrid(); };
   const el = $('#filters'); let t;
   el.addEventListener('input', () => { clearTimeout(t); t = setTimeout(set, 150); });
   el.addEventListener('change', set);
   el.addEventListener('click', e => {
     if(e.target.id === 'fdir'){ F.dir = -F.dir; renderGrid(); }
     else if(e.target.id === 'ftoggle'){ const o = el.classList.toggle('open'); e.target.setAttribute('aria-expanded', o); }
-    else if(e.target.id === 'fclr'){ Object.assign(F, { q:'', nature:'', type:'', minIV:0, minLv:0, perfect:0, shiny:false, sort:'', dir:1 }); el.dataset.sig = ''; renderGrid(); }
+    else if(e.target.id === 'fclr'){ Object.assign(F, { q:'', nature:'', type:'', minIV:0, minLv:0, perfect:0, shiny:false, form:false, sort:'', dir:1 }); el.dataset.sig = ''; renderGrid(); }
   });
 }
 
@@ -127,7 +130,7 @@ export function renderGrid(){
   $('#count').textContent = mons.length;
   $('#fcnt').textContent = `${order.length} / ${mons.length}`;
   $('#fdir').textContent = F.dir > 0 ? '↑ Asc' : '↓ Desc';
-  const active = [F.nature, F.type, F.minIV, F.perfect, F.minLv, F.shiny].filter(Boolean).length; // telefonda gizli filtre sayısı
+  const active = [F.nature, F.type, F.minIV, F.perfect, F.minLv, F.shiny, F.form].filter(Boolean).length; // telefonda gizli filtre sayısı
   $('#ftoggle').textContent = active ? `Filters · ${active}` : 'Filters';
   $('#ftoggle').classList.toggle('on', active > 0);
   const slot = $('#emptySlot'); slot.remove();
