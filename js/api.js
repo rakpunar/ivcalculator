@@ -3,6 +3,32 @@
 import { STAT_API_TO_KEY } from './data.js';
 import { slugify } from './parser.js';
 
+/* Kalıcı önbellek (Cache API): PokéAPI cevapları ve sprite görselleri sayfa yenilense de saklanır.
+   Cache API yoksa/başarısız olursa her şey eskisi gibi ağdan gelir. */
+const CACHE = 'ivcalc-data-v1', TTL = 30 * 864e5; // 30 gün
+const store = () => (globalThis.caches ? caches.open(CACHE) : Promise.resolve(null)).catch(() => null);
+async function cacheGet(url){
+  try{
+    const r = await (await store())?.match(url);
+    if(r && Date.now() - (+r.headers.get('x-cached-at') || 0) < TTL) return r;
+  }catch(e){}
+  return null;
+}
+async function cachePut(url, body, type){
+  try{ await (await store())?.put(url, new Response(body, { headers: { 'x-cached-at': Date.now(), 'content-type': type } })); }catch(e){}
+}
+
+const blobMemo = new Map(); // url → blob: adresi (oturum içi)
+/** Görsel adresini döner: kalıcı önbellekte varsa blob:, yoksa (ve arka planda kaydedip) özgün url */
+export async function imgSrc(url){
+  if(!url) return '';
+  if(blobMemo.has(url)) return blobMemo.get(url);
+  const hit = await cacheGet(url);
+  if(hit){ const b = URL.createObjectURL(await hit.blob()); blobMemo.set(url, b); return b; }
+  fetch(url).then(async r => { if(r.ok) await cachePut(url, await r.blob(), r.headers.get('content-type') || 'image/png'); }).catch(() => {});
+  return url;
+}
+
 /* PokéAPI dostu istek: en fazla 2 paralel, istek başlangıçları arası ~200 ms, 429/5xx/ağ hatasında üstel geri çekilmeyle tekrar */
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 let inflight = 0, nextStart = 0;
@@ -17,13 +43,15 @@ async function acquire(){
 const release = () => { inflight--; waiters.shift()?.(); };
 
 export async function fetchJSON(url){
+  const hit = await cacheGet(url);
+  if(hit) return hit.json();
   let err;
   for(let i = 0; i < 4; i++){
     await acquire();
     let wait = 600 * 2 ** i;
     try{
       const r = await fetch(url);
-      if(r.ok) return await r.json();
+      if(r.ok){ const txt = await r.text(); cachePut(url, txt, 'application/json'); return JSON.parse(txt); }
       err = new Error('HTTP ' + r.status);
       if(r.status !== 429 && r.status < 500) throw err; // 404 vb. tekrar denenmez
       wait = Math.max(wait, (+r.headers.get('Retry-After') || 0) * 1000);

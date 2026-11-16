@@ -9,7 +9,15 @@ const DEFAULT_VIEW = { lvl100:false, stage:'current', mega:false, form:null, fin
 
 /* basit event bus */
 const listeners = {};
+let gridTimer = null;
 function emit(ev, payload){
+  if(ev === 'grid'){ // yüzlerce Pokémonda her değişiklikte tüm kartları yeniden çizmek tarayıcıyı dondurur: 60 ms içindekiler tek çizimde birleşir
+    gridTimer ??= setTimeout(() => { gridTimer = null; fire('grid'); }, 60);
+    return;
+  }
+  fire(ev, payload);
+}
+function fire(ev, payload){
   (listeners[ev] || []).forEach(fn => { try{ fn(payload); }catch(e){ console.error(e); } });
 }
 export const on = (ev, fn) => { (listeners[ev] ??= []).push(fn); };
@@ -89,13 +97,22 @@ export function setView(mon, patch){
 
 /** Seçili Pokémon varsa onlara, yoksa tümüne uygular. Uygulanamayan evrim aşamasını atlar. */
 export function bulkView(patch){
-  const sel = mons.filter(m => m.sel);
+  const sel = mons.filter(m => m.sel), changed = [];
   (sel.length ? sel : mons).forEach(m => {
     const p = { ...patch };
     if('stage' in p && !stageAvailable(m, p.stage)) delete p.stage;
     if(p.mega && !megaAvailable(m)) delete p.mega;
-    if(Object.keys(p).length) setView(m, p);
+    if(Object.keys(p).length){ Object.assign(m.view, p); changed.push(m); }
   });
+  saveInventory(); emit('grid'); // radyolar anında güncellenir
+  (async () => {
+    for(let i = 0; i < changed.length; i += 8){
+      await Promise.all(changed.slice(i, i + 8).map(m => refreshView(m).then(() => emit('mon', m))
+        .catch(err => message('err', `⚠ ${m.name}: ${err.message}`))));
+      emit('grid');
+    }
+    saveInventory();
+  })();
 }
 export const stageAvailable = (m, stage) => stage !== 'final' || !m.opts || m.opts.finals.length > 0;
 export const megaAvailable  = m => !m.opts || m.opts.hasMega;
@@ -140,8 +157,13 @@ export function clearAll(){
 }
 
 /* ---------- kalıcılık ---------- */
-let quotaWarned = false;
-function saveInventory(){
+let quotaWarned = false, saveTimer = null;
+function saveInventory(){ // art arda çağrılar tek yazımda birleşir (500 kayıt = her seferinde büyük JSON)
+  saveTimer ??= setTimeout(saveNow, 400);
+}
+addEventListener('pagehide', () => { if(saveTimer) saveNow(); });
+function saveNow(){
+  clearTimeout(saveTimer); saveTimer = null;
   try{
     const data = mons.map(m => ({
       name:m.name, level:m.level, ability:m.ability, nature:m.nature,

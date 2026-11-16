@@ -1,6 +1,6 @@
 /* UI: envanter grid (template), modal (template), tooltip, mesajlar */
 import { STAT_ORDER, STAT_COLORS, STATS, CAT_ICON } from './data.js';
-import { natureDesc, moveMeta } from './api.js';
+import { natureDesc, moveMeta, imgSrc } from './api.js';
 import { calcMon, effLevel } from './stats.js';
 import { mons, on, setView, bulkView, stageAvailable, megaAvailable, setSel, selectAll, refreshView } from './state.js';
 
@@ -25,8 +25,9 @@ function typeChips(types){
 }
 
 function setImg(img, primary, fallback){
+  img.loading = 'lazy';
   img.onerror = () => { img.onerror = null; img.src = fallback || ''; };
-  img.src = primary || fallback || '';
+  imgSrc(primary || fallback || '').then(src => { img.src = src; });
 }
 
 function colorForValue(v, sorted){

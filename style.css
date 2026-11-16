@@ -204,3 +204,6 @@ kbd{background:var(--panel2);border:1px solid var(--border);border-radius:4px;pa
 .botrow{align-items:center;gap:8px}
 .botbadge{font-size:12px;padding:2px 8px;border-radius:10px;background:#3a2530;color:#ff9a9a}
 .botbadge.on{background:#1f3a2a;color:#9fe0a8}
+
+/* ekran dışındaki kartlar çizilmez (yüzlerce kartta kaydırma/yeniden çizim hızlanır) */
+.card{content-visibility:auto;contain-intrinsic-size:auto 330px}
