@@ -27,6 +27,18 @@
     <button class="btn-add" id="btnAdd">＋ Add to Inventory</button>
     <div class="msg" id="msg"></div>
     <div class="status" id="status"></div>
+    <div class="sync">
+      <div class="sec">Share / Sync</div>
+      <div class="shotrow">
+        <input id="shCode" class="inp" placeholder="Custom code (optional)" maxlength="24" autocomplete="off" spellcheck="false" aria-label="Custom code">
+        <button class="mini" id="shSave" title="Save your list online and get a link that opens it on any device">☁ Save &amp; get link</button>
+      </div>
+      <div class="shothint" id="shInfo">Saves the whole list online. Anyone with the link or code can open it.</div>
+      <div class="shotrow">
+        <input id="shLoad" class="inp" placeholder="Code or link to load" autocomplete="off" spellcheck="false" aria-label="Code or link to load">
+        <button class="mini" id="shGo">⬇ Load</button>
+      </div>
+    </div>
     <button class="mini" id="btnLog" title="Download the error log of this session as a .txt file to share">🐞 Log (<span id="logCount">0</span>)</button><button class="mini" id="btnLogClear" title="Clear the log">✕</button>
     <button class="mini" id="btnReload" title="Reload the newest version of the site (your inventory is kept)">↻ Update site</button>
   </div>
@@ -49,6 +61,9 @@
     <div class="grid" id="grid"></div>
   </div>
 </div>
+
+<dialog id="shDlg" class="dlg"><form method="dialog"><p id="shDlgTxt"></p>
+  <div class="shotrow"><button class="mini" value="merge">Merge with mine</button><button class="mini" value="replace">Replace mine</button><button class="mini" value="cancel">Cancel</button></div></form></dialog>
 
 <!-- Boş alan -->
 <div id="slotHolder" style="display:none">

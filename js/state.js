@@ -176,6 +176,11 @@ export function setEv(m, k, v){
 export function resetEvs(m){ m.evs = { ...origEvs(m) }; return recalc(m); }
 
 /* ---------- kalıcılık ---------- */
+/** paylaşım/kayıt için kalıcı alanlar (sprite/moveMeta/hesaplananlar yok: yeniden türetilir) */
+export const exportMon = m => ({
+  name:m.name, level:m.level, ability:m.ability, nature:m.nature,
+  evs:m.evs, evs0:m.evs0, ivs:m.ivs, moves:m.moves, tera:m.tera ?? null, uid:m.uid ?? null, dex:m.dex ?? null, gform:m.gform ?? 0, shiny:!!m.shiny,
+});
 let quotaWarned = false, saveTimer = null;
 function saveInventory(){ // art arda çağrılar tek yazımda birleşir (500 kayıt = her seferinde büyük JSON)
   saveTimer ??= setTimeout(saveNow, 400);
@@ -184,12 +189,7 @@ addEventListener('pagehide', () => { if(saveTimer) saveNow(); });
 function saveNow(){
   clearTimeout(saveTimer); saveTimer = null;
   try{
-    const data = mons.map(m => ({
-      name:m.name, level:m.level, ability:m.ability, nature:m.nature,
-      evs:m.evs, evs0:m.evs0, ivs:m.ivs, moves:m.moves, tera:m.tera ?? null, uid:m.uid ?? null, dex:m.dex ?? null, gform:m.gform ?? 0, shiny:!!m.shiny,
-      view:m.view, sel:!!m.sel // sprite/art/moveMeta kaydedilmez: PokéAPI'den yeniden türetilir (kota için)
-    }));
-    localStorage.setItem(LS_KEY, JSON.stringify(data));
+    localStorage.setItem(LS_KEY, JSON.stringify(mons.map(m => ({ ...exportMon(m), view:m.view, sel:!!m.sel }))));
   }catch(e){
     if(!quotaWarned){ quotaWarned = true; message('err', '⚠ Browser storage is full: the inventory could not be saved.'); }
   }

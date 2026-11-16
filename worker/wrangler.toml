@@ -1,0 +1,8 @@
+name = "ivcalc-share"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+workers_dev = true
+
+[[kv_namespaces]]
+binding = "LISTS"
+id = "7311618071c1494ab79a465a52fb3cc3"

@@ -303,3 +303,13 @@ select.pick{color-scheme:dark}
 .evinfo .mini{margin-left:auto}
 .evinfo .mini:disabled{opacity:.4;cursor:default}
 @media(max-width:700px){.evin{min-height:36px;width:4em;font-size:16px}}
+
+/* Share / Sync */
+.sync{margin-top:14px;padding-top:6px;border-top:1px solid var(--border)}
+.sync .shotrow .inp{flex:1 1 0}
+.sync .shotrow .mini{flex:0 0 auto}
+.sync .shothint a{color:var(--accent2);word-break:break-all}
+.dlg{margin:auto;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:14px;padding:18px;max-width:min(420px,92vw)}
+.dlg::backdrop{background:rgba(5,8,14,.75)}
+.dlg p{margin-bottom:12px;line-height:1.45}
+.dlg .shotrow{flex-wrap:wrap}
