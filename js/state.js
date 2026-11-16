@@ -38,10 +38,8 @@ async function processQueue(){
   while(queue.length){
     const mon = queue.shift();
     try{
-      const [ab, ni] = await Promise.all([
-        abilityDesc(mon.ability), natureInfo(mon.nature), refreshView(mon)
-      ]);
-      mon.abDesc = ab; mon.natureInfo = ni; mon.err = null;
+      const [ni] = await Promise.all([natureInfo(mon.nature), refreshView(mon)]);
+      mon.natureInfo = ni; mon.err = null;
       mon.natDesc = natDescOf(ni);
       await loadMoveMeta(mon);
       mon.loading = false;
@@ -66,6 +64,14 @@ export async function refreshView(mon){
   const tok = mon._t = {};
   const r = await resolveView(mon);
   if(mon._t !== tok) return;
+  // gösterilecek ability: mega ise megaya ait; değilse kullanıcınınki (türde yoksa "Unknown")
+  let abName = mon.ability, abDesc;
+  if(r.isMega && r.megaAbility){ abName = r.megaAbility; abDesc = await abilityDesc(abName); }
+  else if(r.abilityOk) abDesc = await abilityDesc(abName);
+  else { abName = 'Unknown'; abDesc = `"${mon.ability}" is not a possible ability of ${mon.name} (${r.ownAbilities.join(', ')}).`; }
+  if(mon._t !== tok) return;
+  mon.abName = abName; mon.abDesc = abDesc;
+  if(r.autoForm && !mon.view.form) mon.view.form = r.autoForm; // ability'den anlaşılan form kalıcı olsun
   mon.eff = r; mon.opts = r.opts; mon.base = r.base; mon.types = r.base.types;
   mon.sprite = spriteURL(r.base.id); // eski kayıtlı pokemondb URL'lerini de ezer
   mon.art    = artURL(r.base.id);

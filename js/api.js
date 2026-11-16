@@ -23,7 +23,7 @@ const abCache = {};   // slug → desc
 const abPending = {}; // slug → Promise
 
 export async function abilityDesc(name){
-  const slug = slugify(name);
+  const slug = slugify(name.replace(/['’]/g, '')); // "Mind's Eye" → minds-eye
   if(abCache[slug] !== undefined) return abCache[slug];
   if(abPending[slug]) return abPending[slug];
   abPending[slug] = (async () => {
@@ -127,7 +127,18 @@ export async function resolveView(mon){
   const own = slugify(mon.name), v = mon.view;
   const { self, finals } = await speciesInfo(own);
   const forms = [...new Set([own, ...self.forms])];
-  const form = forms.includes(v.form) ? v.form : own;
+  let form = forms.includes(v.form) ? v.form : own;
+  // ability doğrulama: kullanıcının Pokémon'unun (seçili formun) gerçek ability listesi
+  const norm = x => x.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const abOf = async sl => (await pokemonJSON(sl)).abilities.map(a => a.ability.name);
+  const has = list => list.some(a => norm(a) === norm(mon.ability));
+  let ownAbs = await abOf(form), autoForm = null;
+  if(!has(ownAbs) && !v.form){ // form seçilmemiş: ability başka bir formun ise (ör. Ursaluna-Bloodmoon "Mind's Eye") o formu kullan
+    for(const f of forms.filter(x => x !== form)){
+      const a = await abOf(f);
+      if(has(a)){ autoForm = f; form = f; ownAbs = a; break; }
+    }
+  }
   const pickFinal = finals.find(f => f.name === v.finalPick) ?? finals[0];
   const megaSp = [self, ...(pickFinal ? [pickFinal] : []), ...finals].find(s => s.megas.length);
 
@@ -144,8 +155,15 @@ export async function resolveView(mon){
     slug = megaSp.megas.includes(v.megaPick) ? v.megaPick : megaSp.megas[0];
   }
   const base = await baseStats(slug);
+  // ability: mega'da mega formunun kendi (tek) ability'si; kullanıcının ability'si ise türün gerçek listesinde olmalı
+  const isMega = !!(v.mega && megaSp);
+  const prettyAb = x => x.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  const megaAbs = isMega ? (await pokemonJSON(slug)).abilities.filter(a => !a.is_hidden).map(a => a.ability.name) : [];
   const label = slug === own ? mon.name : slug.replace(/-/g, ' ');
-  return { slug, label, base,
+  return { slug, label, base, isMega,
+    megaAbility: megaAbs[0] ? prettyAb(megaAbs[0]) : null,
+    abilityOk: has(ownAbs), autoForm,
+    ownAbilities: ownAbs.map(prettyAb),
     opts: { forms: forms2, curForm: slug, finals: finals.map(f => f.name), megas: megaSp?.megas ?? [], hasMega: !!megaSp } };
 }
 

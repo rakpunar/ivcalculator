@@ -183,3 +183,14 @@ button{cursor:pointer;border:none;border-radius:9px;font-weight:600;font-size:.9
 .shotrow .mini:disabled{opacity:.6;cursor:wait}
 .shothint{font-size:.72rem;color:var(--muted);margin-top:6px;line-height:1.4}
 kbd{background:var(--panel2);border:1px solid var(--border);border-radius:4px;padding:0 4px;font-size:.7rem;color:var(--text)}
+.ab-bad{color:#ff9b9b !important}
+
+/* stat buff/debuff */
+.buffall{display:flex;flex-wrap:wrap;gap:3px;align-items:center;margin:4px 0;font-size:12px}
+.bfc{white-space:nowrap}
+.bf{font:inherit;font-size:11px;padding:1px 5px;margin:0 1px;border-radius:5px;border:1px solid #3a4a6a;background:#1c2540;color:#9fe0a8;cursor:pointer}
+.bf.neg{color:#ff9a9a}
+.bf.rst{color:#ccd}
+.bf:hover:not(:disabled){filter:brightness(1.4)}
+.bf:disabled{opacity:.3;cursor:not-allowed}
+.buffed{color:#6fe08a}.debuffed{color:#ff7a7a}

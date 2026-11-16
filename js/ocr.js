@@ -109,6 +109,14 @@ function ivEv(digits, label, warnings){
   return { iv: +digits.slice(-5, -3), ev: +digits.slice(-3) };
 }
 
+/** PokéAPI tür adları (tek istek, önbellekli): [{key:'mrmime', label:'Mr Mime'}] */
+let speciesP = null;
+function speciesNames(){
+  return speciesP ??= fetch('https://pokeapi.co/api/v2/pokemon-species?limit=2000').then(r => r.json())
+    .then(j => j.results.map(x => ({ key: x.name.replace(/[^a-z0-9]/g, ''), label: x.name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) })))
+    .catch(() => { speciesP = null; return []; });
+}
+
 /** Görselden Showdown metni üretir; döner {text, warnings[]} */
 export async function screenshotToText(file, onProgress = () => {}){
   const hadWorker = workerReady;
@@ -150,23 +158,42 @@ export async function screenshotToText(file, onProgress = () => {}){
   // 2) başlık: isim (koyu gri zemin üstünde açık yazı → düşük eşik), sonra ismin sağındaki "Lv. N"
   step('Reading name…');
   const bandBottom = Math.max(lAbility.y0 * 0.5, H * 0.1);
-  const nameRead = await read(worker, bmp, [W * 0.04, 0, W * 0.82, bandBottom], { k: 4, thr: 110, psm: '11' });
-  const nw = nameRead.words.sort((a, b) => a.x0 - b.x0);
-  const first = nw.findIndex(w => /[A-Za-z]{3}/.test(w.t));
-  if(first < 0) throw new Error('Pokémon adı okunamadı ("' + nameRead.text.trim() + '")');
-  // "Mr. Mime" gibi boşluklu isimler: bitişik kelimeleri (küçük boşluk) birleştir; cinsiyet ikonu/Lv uzaktadır
-  const parts = [nw[first]];
-  for(const w of nw.slice(first + 1)){
-    const prev = parts[parts.length - 1], h = prev.y1 - prev.y0;
-    if(w.x0 - prev.x1 < h * 0.45 && /[A-Za-z]{2}/.test(w.t)) parts.push(w); else break;
+  // başlık bandı farklı ölçeklerde bozulabildiği için birkaç eşik/ölçek denenir; PokéAPI tür adıyla eşleşen aday seçilir
+  const species = await speciesNames();
+  const bandH = bandBottom, baseK = Math.min(8, Math.max(1.5, 150 / bandH));
+  let best = null;
+  for(const [kf, thr] of [[1, 110], [1, 140], [0.75, 110], [1.4, 110], [1, 80], [1.4, 150]]){
+    const nameRead = await read(worker, bmp, [W * 0.04, 0, W * 0.82, bandBottom], { k: baseK * kf, thr, psm: '11' });
+    const nw = nameRead.words.sort((a, b) => a.x0 - b.x0);
+    const first = nw.findIndex(w => /[A-Za-z]{3}/.test(w.t));
+    if(first < 0) continue;
+    // "Mr. Mime" gibi boşluklu isimler: bitişik kelimeleri (küçük boşluk) birleştir; cinsiyet ikonu/Lv uzaktadır
+    const parts = [nw[first]];
+    for(const w of nw.slice(first + 1)){
+      const prev = parts[parts.length - 1], h = prev.y1 - prev.y0;
+      if(w.x0 - prev.x1 < h * 0.45 && /[A-Za-z]{2}/.test(w.t)) parts.push(w); else break;
+    }
+    const nm = parts.map(w => w.t.replace(/[^A-Za-z'’.\- ]/g, '')).join(' ').trim();
+    const key = nm.toLowerCase().replace(/[^a-z0-9]/g, '');
+    let d = 99, hit = null;
+    for(const sp of species){ const dd = Math.min(lev(key, sp.key), sp.key.length >= 5 && key.includes(sp.key) ? 0.5 : 99); if(dd < d){ d = dd; hit = sp; } }
+    const ok = hit && d <= Math.max(1, Math.floor(hit.key.length / 4));
+    const cand = { nm: ok ? hit.label : nm, d: ok ? d : 99, nameW: { ...parts[parts.length - 1], y0: nw[first].y0, y1: nw[first].y1 }, ok };
+    if(!best || cand.d < best.d) best = cand;
+    if(d === 0) break;
   }
-  const nameW = { ...parts[parts.length - 1], y0: nw[first].y0, y1: nw[first].y1 };
-  const name = parts.map(w => w.t.replace(/[^A-Za-z'’.\- ]/g, '')).join(' ').trim();
+  if(!best) throw new Error('Pokémon adı okunamadı');
+  const nameW = best.nameW, name = best.nm;
 
   step('Reading level…');
-  const lvRead = await read(worker, bmp, [nameW.x1, Math.max(0, nameW.y0 - 4), Math.min(W, nameW.x1 + W * 0.26), nameW.y1 + 4],
-    { k: 6, thr: 160, psm: '7', whitelist: 'Lv.0123456789 ' });
-  const level = +(lvRead.text.match(/(\d{1,3})\s*$/)?.[1] ?? 0) || null;
+  // seviye: birkaç ölçekle oku, en sık çıkan değeri al (eşitlikte daha çok haneli)
+  const votes = {};
+  for(const kf of [1.5, 1, 2, 1.25]){
+    const t = (await read(worker, bmp, [nameW.x1, Math.max(0, nameW.y0 - 4), Math.min(W, nameW.x1 + W * 0.26), nameW.y1 + 4],
+      { k: baseK * kf, thr: 160, psm: '7', whitelist: 'Lv.0123456789 ' })).text;
+    const n = t.match(/(\d{1,3})\s*$/)?.[1]; if(n) votes[+n] = (votes[+n] || 0) + 1;
+  }
+  const level = +Object.keys(votes).sort((a, b) => votes[b] - votes[a] || String(b).length - String(a).length)[0] || null;
   if(!level) warnings.push('seviye okunamadı');
 
   report(100, 'Done');

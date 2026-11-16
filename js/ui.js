@@ -1,6 +1,6 @@
 /* UI: envanter grid (template), modal (template), tooltip, mesajlar */
 import { STAT_ORDER, STAT_COLORS, STATS, CAT_ICON } from './data.js';
-import { abilityDesc, natureDesc, moveMeta } from './api.js';
+import { natureDesc, moveMeta } from './api.js';
 import { calcMon, effLevel } from './stats.js';
 import { mons, on, setView, bulkView, stageAvailable, megaAvailable, setSel, selectAll, refreshView } from './state.js';
 
@@ -69,7 +69,8 @@ export function renderGrid(){
     node.dataset.i = i;
     node.querySelector('.name').textContent = (m.eff?.label ?? m.name) + (m.loading ? ' ⏳' : '');
     node.querySelector('.lvl').textContent = `Lv. ${m.view.lvl100 ? 100 : (m.level ?? '?')} · ${m.nature} Nature`;
-    node.querySelector('.ability').textContent = m.ability;
+    node.querySelector('.ability').textContent = m.abName ?? m.ability;
+    node.querySelector('.ability').classList.toggle('ab-bad', m.abName === 'Unknown');
     node.querySelector('.iv-sum').textContent = `${tv(m)} / 186`;
     node.querySelector('.ivbadge .tv').textContent = tv(m);
     node.querySelector('.types').innerHTML = typeChips(m.types);
@@ -140,6 +141,13 @@ function initToolbar(){
     else handleCtrl(m, e.target);
   });
   modal.addEventListener('change', e => { if(modalMon) handleCtrl(modalMon, e.target); });
+  modal.addEventListener('click', e => { // stat buff/debuff: data-b = stat anahtarı veya 'all', data-d = değişim (0 = sıfırla)
+    const b = e.target.closest('[data-b]'); if(!b || !modalMon || b.disabled) return;
+    const m = modalMon, d = +b.dataset.d, keys = b.dataset.b === 'all' ? BUFF_KEYS : [b.dataset.b];
+    m.buff ??= {};
+    keys.forEach(k => { m.buff[k] = d ? Math.max(-6, Math.min(6, (m.buff[k] || 0) + d)) : 0; });
+    renderModal(m);
+  });
 }
 
 /* ---------- modal ---------- */
@@ -150,6 +158,18 @@ function openModal(m){
 }
 
 export function closeModal(){ overlay.classList.remove('open'); modalMon = null; }
+
+/* Buff/debuff kademeleri (-6..+6, HP hariç): çarpan (2+n)/2, negatifte 2/(2-n). Yalnızca oturum içi, kaydedilmez. */
+const BUFF_KEYS = ['Atk','Def','SpA','SpD','Spe'];
+const buffMult = n => n >= 0 ? (2 + n) / 2 : 2 / (2 - n);
+const buffBtns = (b, n) => [[-6,'−6'],[-2,'−2'],[-1,'−1'],[1,'+1'],[2,'+2'],[6,'+6']].map(([d,t]) =>
+  `<button class="bf${d<0?' neg':''}" data-b="${b}" data-d="${d}"${(d>0 && n>=6) || (d<0 && n<=-6) ? ' disabled' : ''}>${t}</button>`).join('')
+  + `<button class="bf rst" data-b="${b}" data-d="0" title="Reset"${n ? '' : ' disabled'}>↺</button>`;
+
+function statVal(m, k){
+  const n = m.buff?.[k] || 0, v = m.calc[k];
+  return n ? `<b class="${n>0?'buffed':'debuffed'}">${Math.floor(v * buffMult(n))}</b> <small title="Base value">(${v}, ${n>0?'+':''}${n})</small>` : v;
+}
 
 function renderModal(m){
   // veri hazır değilse arka planda çekeceğiz; bu render anlık durumu gösterir
@@ -180,10 +200,12 @@ function renderModal(m){
   root.querySelector('#statBody').innerHTML = STAT_ORDER.map(s=>`
     <tr>
       <td style="color:${STAT_COLORS[s.key]}">${s.label}${arrow(s.key)}</td>
-      <td class="v100">${m.calc?.[s.key]!=null ? m.calc[s.key] : '<span class="na">…</span>'}</td>
+      <td class="v100">${m.calc?.[s.key]!=null ? statVal(m, s.key) : '<span class="na">…</span>'}</td>
       <td class="iv">${STATS.get(m.ivs,s.key)}</td>
       <td class="ev">${STATS.get(m.evs,s.key)}</td>
+      <td class="bfc">${BUFF_KEYS.includes(s.key) ? buffBtns(s.key, m.buff?.[s.key] || 0) : '<span class="na">—</span>'}</td>
     </tr>`).join('');
+  root.querySelector('#buffAll').innerHTML = '<b>All stats:</b> ' + buffBtns('all', 0).replace(' disabled','');
 
   // Base stat tablosu (sıra = Stat Dağılımı; renk = değere göre yeşil→kırmızı)
   root.querySelector('#baseBody').innerHTML = m.base
@@ -194,7 +216,7 @@ function renderModal(m){
 
   // Alt orta blok: ability + nature adı/açıklaması (hamleler ve base statların altında, ortalanmış)
   root.querySelector('.fAbility').innerHTML =
-    `<b>Ability:</b> <span class="abl">${esc(m.ability)}</span> — ${m.abDesc != null ? esc(m.abDesc) : 'loading…'}`;
+    `<b>Ability:</b> <span class="abl${m.abName === 'Unknown' ? ' ab-bad' : ''}">${esc(m.abName ?? m.ability)}</span> — ${m.abDesc != null ? esc(m.abDesc) : 'loading…'}`;
   root.querySelector('.fNature').innerHTML =
     `<b>Nature:</b> <b>${esc(m.nature)}</b> — ${m.natDesc != null ? esc(m.natDesc) : 'loading…'}`;
 
@@ -270,13 +292,6 @@ function moveRows(m){
 
 /* modal verisi yoksa arka planda tek seferlik çek (promise-cache → çift fetch yok) */
 function fetchModalData(m){
-  if(m.abDesc == null && !m._abTried){
-    m._abTried = true;
-    abilityDesc(m.ability).then(d => {
-      m.abDesc = d;
-      if(modalMon===m) renderModal(m);
-    }).catch(() => { if(modalMon===m) renderModal(m); });
-  }
   if(m.natDesc == null && !m._natTried){
     m._natTried = true;
     natureDesc(m.nature).then(d => { m.natDesc = d; if(modalMon===m) renderModal(m); })
@@ -297,10 +312,9 @@ function placeTip(e){
 function hideTip(){ tooltip.style.display = 'none'; }
 
 function showAbilityTip(e, m){
-  tooltip.innerHTML = `<b>${esc(m.ability)}</b><br><span class="skel">Loading…</span>`;
+  const n = esc(m.abName ?? m.ability);
+  tooltip.innerHTML = `<b>${n}</b><br>` + (m.abDesc != null ? esc(m.abDesc) : '<span class="skel">Loading…</span>');
   placeTip(e);
-  abilityDesc(m.ability).then(d => { tooltip.innerHTML = `<b>${esc(m.ability)}</b><br>${esc(d)}`; })
-    .catch(() => { tooltip.innerHTML = `<b>${esc(m.ability)}</b><br><i>Could not load description.</i>`; });
 }
 function showNatureTip(e, m){
   tooltip.innerHTML = `<b>${esc(m.nature)} Nature</b><br><span class="skel">Loading…</span>`;
