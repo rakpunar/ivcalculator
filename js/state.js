@@ -159,6 +159,22 @@ export function clearAll(){
   message('ok', '🗑 Inventory cleared.');
 }
 
+/* ---------- EV düzenleme: ilk girilen değerler (evs0) saklanır, istenince geri dönülür ---------- */
+export const EV_MAX = 252, EV_TOTAL = 510, EV_KEYS = ['HP','Atk','Def','SpA','SpD','Spe'];
+export const evTotal = m => EV_KEYS.reduce((s, k) => s + (m.evs?.[k] || 0), 0);
+export const origEvs = m => (m.evs0 ??= { ...m.evs });
+export const evsChanged = m => EV_KEYS.some(k => (m.evs?.[k] || 0) !== (origEvs(m)[k] || 0));
+async function recalc(m){ m.calc = await calcMon(m); saveInventory(); }
+/** tek stat EV'si: 0..252, toplam 510'u aşarsa kalan kadar kısılır */
+export function setEv(m, k, v){
+  origEvs(m);
+  const rest = evTotal(m) - (m.evs?.[k] || 0);
+  const n = Math.max(0, Math.min(EV_MAX, Math.floor(+v) || 0, EV_TOTAL - rest));
+  m.evs = { ...m.evs, [k]: n };
+  return recalc(m).then(() => n);
+}
+export function resetEvs(m){ m.evs = { ...origEvs(m) }; return recalc(m); }
+
 /* ---------- kalıcılık ---------- */
 let quotaWarned = false, saveTimer = null;
 function saveInventory(){ // art arda çağrılar tek yazımda birleşir (500 kayıt = her seferinde büyük JSON)
@@ -170,7 +186,7 @@ function saveNow(){
   try{
     const data = mons.map(m => ({
       name:m.name, level:m.level, ability:m.ability, nature:m.nature,
-      evs:m.evs, ivs:m.ivs, moves:m.moves, tera:m.tera ?? null, uid:m.uid ?? null, dex:m.dex ?? null, gform:m.gform ?? 0, shiny:!!m.shiny,
+      evs:m.evs, evs0:m.evs0, ivs:m.ivs, moves:m.moves, tera:m.tera ?? null, uid:m.uid ?? null, dex:m.dex ?? null, gform:m.gform ?? 0, shiny:!!m.shiny,
       view:m.view, sel:!!m.sel // sprite/art/moveMeta kaydedilmez: PokéAPI'den yeniden türetilir (kota için)
     }));
     localStorage.setItem(LS_KEY, JSON.stringify(data));

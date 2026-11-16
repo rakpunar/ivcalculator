@@ -3,7 +3,7 @@ import { STAT_ORDER, STAT_COLORS, STATS, CAT_ICON } from './data.js';
 import { natureDesc, moveMeta, imgSrc } from './api.js';
 import { PLACEHOLDER, cropSprite } from './sprites.js';
 import { calcMon, effLevel } from './stats.js';
-import { mons, on, setView, bulkView, stageAvailable, megaAvailable, setSel, selectAll, refreshView } from './state.js';
+import { mons, on, setView, bulkView, stageAvailable, megaAvailable, setSel, selectAll, refreshView, setEv, resetEvs, evTotal, evsChanged, EV_MAX, EV_TOTAL } from './state.js';
 
 const $  = sel => document.querySelector(sel);
 const grid = $('#grid');
@@ -208,8 +208,15 @@ function initToolbar(){
     if(e.target.closest('.sel')) setSel(m, e.target.checked);
     else handleCtrl(m, e.target);
   });
-  modal.addEventListener('change', e => { if(modalMon) handleCtrl(modalMon, e.target); });
+  modal.addEventListener('change', e => {
+    if(!modalMon) return;
+    if(e.target.classList.contains('evin')){
+      const m = modalMon; setEv(m, e.target.dataset.k, e.target.value).then(n => { e.target.value = n; refreshEvUI(m); });
+    }else handleCtrl(modalMon, e.target);
+  });
+  modal.addEventListener('focusin', e => { if(e.target.classList?.contains('evin')) e.target.select(); });
   modal.addEventListener('click', e => { // stat buff/debuff: data-b = stat anahtarı veya 'all', data-d = değişim (0 = sıfırla)
+    if(e.target.id === 'evReset' && modalMon && !e.target.disabled){ const m = modalMon; resetEvs(m).then(() => refreshEvUI(m)); return; }
     const b = e.target.closest('[data-b]'); if(!b || !modalMon || b.disabled) return;
     const m = modalMon, d = +b.dataset.d, keys = b.dataset.b === 'all' ? BUFF_KEYS : [b.dataset.b];
     m.buff ??= {};
@@ -237,6 +244,17 @@ const buffBtns = (b, n) => [[-6,'−6'],[-2,'−2'],[-1,'−1'],[1,'+1'],[2,'+2'
 function statVal(m, k){
   const n = m.buff?.[k] || 0, v = m.calc[k];
   return n ? `<b class="${n>0?'buffed':'debuffed'}">${Math.floor(v * buffMult(n))}</b> <small title="Base value">(${v}, ${n>0?'+':''}${n})</small>` : v;
+}
+
+const evInfoHTML = m => `<span class="tb-lbl">EV total</span> <b class="${evTotal(m) > EV_TOTAL ? 'debuffed' : ''}">${evTotal(m)}</b> <small>/ ${EV_TOTAL} · max ${EV_MAX} each</small>`
+  + `<button class="mini" id="evReset" title="Restore the EVs this Pokémon was added with"${evsChanged(m) ? '' : ' disabled'}>↺ Reset EVs</button>`;
+/** EV değişince modalı yeniden çizmeden (odak kaybolmasın) hesaplanan statları ve toplamı günceller */
+function refreshEvUI(m){
+  if(modalMon !== m) return;
+  const rows = modal.querySelectorAll('#statBody tr');
+  STAT_ORDER.forEach((s, i) => { const c = rows[i]?.querySelector('.v100'); if(c && m.calc?.[s.key] != null) c.innerHTML = statVal(m, s.key); });
+  modal.querySelectorAll('.evin').forEach(inp => { if(document.activeElement !== inp) inp.value = STATS.get(m.evs, inp.dataset.k); });
+  const info = modal.querySelector('#evInfo'); if(info) info.innerHTML = evInfoHTML(m);
 }
 
 function renderModal(m){
@@ -270,9 +288,10 @@ function renderModal(m){
       <td style="color:${STAT_COLORS[s.key]}">${s.label}${arrow(s.key)}</td>
       <td class="v100">${m.calc?.[s.key]!=null ? statVal(m, s.key) : '<span class="na">…</span>'}</td>
       <td class="iv">${STATS.get(m.ivs,s.key)}</td>
-      <td class="ev">${STATS.get(m.evs,s.key)}</td>
+      <td class="ev"><input class="evin" type="number" inputmode="numeric" min="0" max="${EV_MAX}" data-k="${s.key}" aria-label="${s.label} EV" value="${STATS.get(m.evs,s.key)}"></td>
       <td class="bfc">${BUFF_KEYS.includes(s.key) ? buffBtns(s.key, m.buff?.[s.key] || 0) : '<span class="na">—</span>'}</td>
     </tr>`).join('');
+  root.querySelector('#evInfo').innerHTML = evInfoHTML(m);
   root.querySelector('#buffAll').innerHTML = '<b>All stats:</b> ' + buffBtns('all', 0).replace(' disabled','');
 
   // Base stat tablosu (sıra = Stat Dağılımı; renk = değere göre yeşil→kırmızı)
