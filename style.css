@@ -318,7 +318,6 @@ select.pick{color-scheme:dark}
 .tiny-row .type-icon{line-height:1.4;font-size:.62rem}
 .m-footer .type-icon{width:auto;padding:0 10px}
 
-/* Tür rozetleri: arka plana göre kontrastlı yazı (WCAG ≥ 4.5 hedefi; açık renkler koyu, koyu renkler beyaz yazı) */
-.type-icon{font-weight:700;letter-spacing:.3px}
-.t-normal,.t-fire,.t-water,.t-electric,.t-grass,.t-ice,.t-ground,.t-flying,.t-psychic,.t-bug,.t-rock,.t-steel,.t-fairy{color:#1a1a1a;text-shadow:none}
-.t-fighting,.t-poison,.t-ghost,.t-dragon,.t-dark,.t-shadow{color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.45)}
+/* Tür rozetleri: pokemondb.net ile aynı (beyaz yazı + koyu gölge). Özgüllük yüksek tutuldu:
+   ".tiny-row span:first-child" gibi kurallar rozet rengini ezmesin. */
+.type-icon,.tiny-row .hp-type .type-icon,.m-footer .type-icon{color:#fff;font-weight:700;letter-spacing:.3px;text-shadow:1px 1px 2px rgba(0,0,0,.7)}
