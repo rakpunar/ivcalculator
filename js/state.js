@@ -17,10 +17,9 @@ function message(type, text){ emit('msg', {type, text}); }
 
 /* ---------- arka plan kuyruğu ---------- */
 const queue = [];
-let processing = false;
 
 function updateQueueStatus(){
-  const remaining = queue.length + (processing ? 1 : 0);
+  const remaining = queue.length + active;
   emit('queue', remaining);
 }
 
@@ -31,29 +30,31 @@ export function enqueueDataFetch(mon){
   processQueue();
 }
 
-async function processQueue(){
-  if(processing) return;
-  processing = true;
-  updateQueueStatus();
-  while(queue.length){
-    const mon = queue.shift();
-    try{
-      const [ni] = await Promise.all([natureInfo(mon.nature), refreshView(mon)]);
-      mon.natureInfo = ni; mon.err = null;
-      mon.natDesc = natDescOf(ni);
-      await loadMoveMeta(mon);
-      mon.loading = false;
-      message('ok', `✔ ${mon.name}: stat data updated.`);
-    }catch(err){
-      mon.err = err.message; mon.loading = false;
-      message('err', `⚠ ${mon.name}: could not fetch data (${err.message}); will retry in tooltip/modal.`);
-    }
-    saveInventory();
-    updateQueueStatus();
-    emit('grid');
-    emit('mon', mon);
+const WORKERS = 4; // toplu importta hızlansın diye birkaç Pokémon paralel işlenir
+let active = 0;
+
+async function runOne(mon){
+  try{
+    const [ni] = await Promise.all([natureInfo(mon.nature), refreshView(mon)]);
+    mon.natureInfo = ni; mon.err = null;
+    mon.natDesc = natDescOf(ni);
+    await loadMoveMeta(mon);
+    mon.loading = false;
+    if(queue.length < 3) message('ok', `✔ ${mon.name}: stat data updated.`);
+  }catch(err){
+    mon.err = err.message; mon.loading = false;
+    message('err', `⚠ ${mon.name}: could not fetch data (${err.message}); will retry in tooltip/modal.`);
   }
-  processing = false;
+  saveInventory();
+  emit('grid');
+  emit('mon', mon);
+}
+
+function processQueue(){
+  while(active < WORKERS && queue.length){
+    active++;
+    runOne(queue.shift()).finally(() => { active--; processQueue(); });
+  }
   updateQueueStatus();
 }
 
@@ -112,6 +113,17 @@ export function addMon(mon){
   enqueueDataFetch(mon);
 }
 
+/** Toplu ekleme: tek kaydet + tek çizim. uid'si zaten envanterde olanlar atlanır; döner {added, skipped} */
+export function addMons(list){
+  const have = new Set(mons.map(m => m.uid).filter(Boolean));
+  const fresh = list.filter(m => !(m.uid && have.has(m.uid)));
+  fresh.forEach(m => { m.view = { ...DEFAULT_VIEW }; m.sel = false; mons.push(m); });
+  saveInventory();
+  emit('grid');
+  fresh.forEach(enqueueDataFetch);
+  return { added: fresh.length, skipped: list.length - fresh.length };
+}
+
 export function removeMon(index){
   const [m] = mons.splice(index,1);
   saveInventory();
@@ -128,15 +140,18 @@ export function clearAll(){
 }
 
 /* ---------- kalıcılık ---------- */
+let quotaWarned = false;
 function saveInventory(){
   try{
     const data = mons.map(m => ({
       name:m.name, level:m.level, ability:m.ability, nature:m.nature,
-      evs:m.evs, ivs:m.ivs, moves:m.moves, tera:m.tera ?? null,
-      sprite:m.sprite, art:m.art, moveMeta:m.moveMeta ?? null, view:m.view, sel:!!m.sel
+      evs:m.evs, ivs:m.ivs, moves:m.moves, tera:m.tera ?? null, uid:m.uid ?? null,
+      view:m.view, sel:!!m.sel // sprite/art/moveMeta kaydedilmez: PokéAPI'den yeniden türetilir (kota için)
     }));
     localStorage.setItem(LS_KEY, JSON.stringify(data));
-  }catch(e){ /* quota vb. sessizce geç */ }
+  }catch(e){
+    if(!quotaWarned){ quotaWarned = true; message('err', '⚠ Browser storage is full: the inventory could not be saved.'); }
+  }
 }
 
 export function loadInventory(){

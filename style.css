@@ -194,3 +194,6 @@ kbd{background:var(--panel2);border:1px solid var(--border);border-radius:4px;pa
 .bf:hover:not(:disabled){filter:brightness(1.4)}
 .bf:disabled{opacity:.3;cursor:not-allowed}
 .buffed{color:#6fe08a}.debuffed{color:#ff7a7a}
+
+#impbar{width:100%;height:10px;margin:4px 0;accent-color:#6fe08a}
+#impbar[hidden]{display:none}
