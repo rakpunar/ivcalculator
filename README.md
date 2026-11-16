@@ -37,7 +37,7 @@ IVs: 15 HP / 27 Atk / 4 Def / 29 SpA / 28 SpD / 11 Spe
 
 ## Notlar
 
-- Veri kaynağı: [PokéAPI](https://pokeapi.co) (CORS açık, doğrudan tarayıcıdan çağrılır); görseller [PokeAPI/sprites](https://github.com/PokeAPI/sprites) deposundan gelir. Scrape/proxy yok.
+- Veri kaynağı: oyunun kendi verisi, siteyle birlikte yayınlanan `gamedata/` klasöründen (stat/tür/ability/evrim/mega/hamle tabloları ve 128x128 sprite'lar). PokéAPI kullanılmaz.
 - Pokémon kayıtları yalnızca **senin tarayıcında** saklanır (localStorage), sunucuya gitmez.
 
 ## Yerel Çalıştırma

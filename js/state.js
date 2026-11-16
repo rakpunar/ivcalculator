@@ -86,7 +86,7 @@ export async function refreshView(mon){
   mon.abName = abName; mon.abDesc = abDesc;
   if(r.autoForm && !mon.view.form) mon.view.form = r.autoForm; // ability'den anlaşılan form kalıcı olsun
   mon.eff = r; mon.opts = r.opts; mon.base = r.base; mon.types = r.base.types;
-  mon.imgs = await spriteList(mon, r.base.species); // yerel sprite adayları (PokéAPI görseli kullanılmaz)
+  mon.imgs = await spriteList(mon, r.id); // yerel sprite adayları (PokéAPI görseli kullanılmaz)
   try{ mon.calc = await calcMon(mon); }catch(e){ mon.calc = null; }
 }
 

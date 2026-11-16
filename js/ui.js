@@ -48,8 +48,8 @@ const isMega  = m => !!m.view.mega && !!m.opts?.hasMega;
 /* Segmented radio: gizli input + stilize span (klavye/erişilebilirlik korunur) */
 const seg = (name, items, val) => `<div class="seg" role="radiogroup">${items.map(o =>
   `<label${o.dis ? ' class="dis"' : ''} title="${esc(o.title || '')}"><input type="radio" name="${name}" value="${o.v}"${o.v === val ? ' checked' : ''}${o.dis ? ' disabled' : ''}><span>${o.t}</span></label>`).join('')}</div>`;
-const pick = (cls, items, val) => `<select class="pick ${cls}">${items.map(v =>
-  `<option value="${v}"${v === val ? ' selected' : ''}>${esc(pretty(v))}</option>`).join('')}</select>`;
+const pick = (cls, items, val, labels) => `<select class="pick ${cls}">${items.map(v =>
+  `<option value="${v}"${String(v) === String(val) ? ' selected' : ''}>${esc(labels?.[v] ?? pretty(String(v)))}</option>`).join('')}</select>`;
 
 function ctrlHTML(m, i){ // i: radyo grup adı eki (kart indeksi veya 'M' = modal)
   if(!m.opts) return '<span class="na">…</span>';
@@ -59,9 +59,9 @@ function ctrlHTML(m, i){ // i: radyo grup adı eki (kart indeksi veya 'M' = moda
   let h = seg('lv' + i, [{ v:'cur', t:'Lv. ' + (m.level ?? '?') }, { v:'100', t:'Lv. 100' }], v.lvl100 ? '100' : 'cur')
         + seg('st' + i, stages, st);
   if(o.hasMega) h += seg('mg' + i, [{ v:'off', t:'Normal' }, { v:'on', t:'Mega' }], v.mega ? 'on' : 'off');
-  if(st === 'final' && !v.mega && o.finals.length > 1) h += pick('pk-final', o.finals, v.finalPick ?? o.finals[0]);
-  if(v.mega && o.megas.length > 1) h += pick('pk-mega', o.megas, v.megaPick ?? o.megas[0]);
-  if(o.forms.length > 1) h += pick('pk-form', o.forms, o.curForm);
+  if(st === 'final' && !v.mega && o.finals.length > 1) h += pick('pk-final', o.finals, v.finalPick ?? o.finals[0], o.labels);
+  if(v.mega && o.megas.length > 1) h += pick('pk-mega', o.megas, v.megaPick ?? o.megas[0], o.labels);
+  if(o.forms.length > 1) h += pick('pk-form', o.forms, o.curForm, o.labels);
   return h;
 }
 
@@ -249,7 +249,7 @@ function showMoveTip(e, mv, m){
       `<span class="type-icon t-${d.type}" style="width:auto;padding:1px 7px">${d.type.toUpperCase()}</span>`,
     ];
     if(CAT_ICON[d.cat]) bits.push(`<img class="caticon" src="${CAT_ICON[d.cat].icon}" width="27" height="18" alt="${CAT_ICON[d.cat].label}" title="${CAT_ICON[d.cat].label}">`);
-    bits.push(`Pwr: <b>${d.power ?? '—'}</b>`, `Acc: <b>${d.accuracy ?? '—'}%</b>`, `PP: <b>${d.pp ?? '—'}</b>`);
+    bits.push(`Pwr: <b>${d.power ?? '—'}</b>`, `Acc: <b>${d.accuracy != null ? d.accuracy + '%' : '—'}</b>`, `PP: <b>${d.pp ?? '—'}</b>`);
     tooltip.innerHTML = `
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:5px">${bits.join('')}</div>
       <b>${esc(mv)}</b><br>${esc(d.desc || 'No description available.')}`;

@@ -10,7 +10,7 @@ export async function spriteList(mon, speciesId){
   const out = [], v = mon.view || {};
   const add = p => { if(mon.shiny) out.push(`${SPR}${p}_shiny.png`); out.push(`${SPR}${p}.png`); }; // shiny yoksa normali
   // PC'den gelen Pokémon (dex = oyun kimliği) kendi formunu gösterir; evrim/mega seçilince türe göre görsel
-  if(mon.dex && v.stage === 'current' && !v.mega){
+  if(mon.dex && v.stage === 'current' && !v.mega && v.form == null){
     const dex = +mon.dex, f = +mon.gform || 0;
     if(dex >= 3000) add(`forms/${dex}`);
     else{
@@ -22,7 +22,7 @@ export async function spriteList(mon, speciesId){
       add(String(dex));
     }
   }
-  if(speciesId) add(String(speciesId));
+  if(speciesId) add(speciesId >= 3000 ? `forms/${speciesId}` : String(speciesId));
   return [...new Set(out)];
 }
 

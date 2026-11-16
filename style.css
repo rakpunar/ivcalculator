@@ -209,3 +209,5 @@ kbd{background:var(--panel2);border:1px solid var(--border);border-radius:4px;pa
 .card{content-visibility:auto;contain-intrinsic-size:auto 330px}
 
 .card img,.m-left img{display:block;margin-left:auto;margin-right:auto}
+
+.t-shadow{background-color:#639}
