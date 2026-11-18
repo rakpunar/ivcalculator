@@ -346,7 +346,7 @@ kbd{background:var(--panel2);border:1px solid var(--border);border-radius:4px;pa
 .tiny-row[hidden],.footerline[hidden]{display:none}
 
 /* Karşılaştırma */
-.cmp{width:min(960px,96vw);max-width:96vw}
+.cmp{width:min(1140px,96vw);max-width:96vw}
 .cmp-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .cmp-head h3{margin:0;color:var(--accent-fg);font-size:1.05rem}
 .cmp-imp{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
@@ -376,3 +376,17 @@ button,.card,.seg span,.chip span{transition:background-color .15s,border-color 
 /* Tür rozetleri: açık zeminlerde koyu, koyu zeminlerde beyaz yazı (WCAG 4.5:1) */
 .t-normal,.t-fire,.t-water,.t-electric,.t-grass,.t-ice,.t-ground,.t-flying,.t-psychic,.t-bug,.t-rock,.t-steel,.t-fairy{color:#181818!important;text-shadow:none!important}
 .t-dragon{background-color:#64d}
+/* Karşılaştırma: nature/ability/IV/EV + dikey yerleşim */
+.cmp-lay{margin-left:auto;display:flex;gap:6px}
+.cmptbl td.txt{text-align:left;white-space:normal;min-width:110px}
+.cmptbl td small{display:block;font-size:.72rem}
+.cmptbl td b+small{display:inline}
+.cmptbl td .ivev{display:block;margin-top:2px}
+.cmptbl .up{color:var(--good);font-style:normal}.cmptbl .down{color:var(--bad);font-style:normal}
+.cmptbl td.txt small{display:inline-block;margin-left:4px}
+.cmptbl td.txt small.ha{background:var(--accent);color:var(--ink);border-radius:4px;padding:0 4px;font-weight:700}
+.cmptbl td.who{flex-wrap:wrap}.cmptbl .sumline{flex-basis:100%;color:var(--muted);margin-top:-2px}
+.cmptbl.vert th:first-child{text-align:left;white-space:nowrap;padding-right:8px}
+.cmptbl.vert th.whoh{font-weight:400;text-transform:none;letter-spacing:0;color:var(--text)}
+.cmptbl.vert .whoh .who{display:flex;align-items:center;gap:8px;justify-content:center;text-align:left}
+.cmptbl.vert td.info{white-space:nowrap}

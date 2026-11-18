@@ -47,6 +47,7 @@ function build([dex, abil, evo, mega, moves, abDesc, fm]){
       walk(start);
       return [...new Set(out)];
     },
+    hiddenOf(id){ const h = abil[id]?.Ha; return h && h !== 'None' ? h : null; },
     abilitiesOf(id){ const a = abil[id]; return a ? [a.A1, a.A2, a.Ha].filter(x => x && x !== 'None') : []; },
     abilityDesc: name => descBy[norm(name)] ?? null,
     move: name => moveBy[norm(name)] ?? null,
