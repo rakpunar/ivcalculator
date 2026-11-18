@@ -324,3 +324,5 @@ select.pick{color-scheme:dark}
 .shstat{color:var(--muted);font-size:.8rem;margin-left:4px}
 .dlg .mini.danger{margin-left:0;font-size:inherit;padding:inherit}
 .dlg [hidden]{display:none}
+.cp{padding:0 5px;margin-left:4px;font-size:.7rem;line-height:1.5}
+.tiny-row[hidden],.footerline[hidden]{display:none}

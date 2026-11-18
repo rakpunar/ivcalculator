@@ -28,7 +28,7 @@ const TR = {
   '🗑 Clear All': '🗑 Tümünü Sil',
   'Delete all Pokémon in the inventory': "Envanterdeki tüm Pokémon'ları sil",
   'Select all': 'Tümünü seç', 'Deselect all': 'Seçimi kaldır', 'Invert': 'Tersine çevir',
-  'Clear All': 'Tümünü sil', 'Open list': 'Listeyi aç', 'Cancel': 'İptal',
+  'ID': 'ID', 'Copy ID': 'ID’yi kopyala', '✔ Copied: {v}': '✔ Kopyalandı: {v}', 'Clear All': 'Tümünü sil', 'Open list': 'Listeyi aç', 'Cancel': 'İptal',
   '☁ Sync now': '☁ Şimdi eşitle', 'Synced': 'Eşitlendi', 'Saving…': 'Kaydediliyor…', 'Sync failed — will retry': 'Eşitleme başarısız — tekrar denenecek',
   'Read-only (old link)': 'Salt okunur (eski bağlantı)', 'List not found': 'Liste bulunamadı',
   'Disconnect this browser from the list (the list stays online; your own inventory comes back)': 'Bu tarayıcının listeyle bağlantısını kes (liste çevrimiçi kalır; kendi envanterin geri gelir)',

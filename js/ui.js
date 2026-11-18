@@ -151,6 +151,7 @@ export function renderGrid(){
     node.querySelector('.ivbadge .tv').textContent = tv(m);
     node.querySelector('.types').innerHTML = typeChips(m.types);
     node.querySelector('.hp-type').innerHTML = hpChip(m);
+    fillId(node.querySelector('.idrow'), m);
     if(m.opts?.hasMega) node.querySelector('.tags').innerHTML = isMega(m)
       ? '<span class="tag mega on" title="Showing Mega Evolution">MEGA</span>'
       : '<span class="tag mega" title="This Pokémon has a Mega Evolution">★ Mega available</span>';
@@ -314,6 +315,7 @@ function renderModal(m){
   root.querySelector('.fAbility').innerHTML =
     `<b>Ability:</b> <span class="abl${m.abName === 'Unknown' ? ' ab-bad' : ''}">${esc(m.abName ?? m.ability)}</span> — ${m.abDesc != null ? esc(m.abDesc) : 'loading…'}`;
   root.querySelector('.hpv').innerHTML = hpChip(m);
+  fillId(root.querySelector('.fId'), m);
   root.querySelector('.fNature').innerHTML =
     `<b>Nature:</b> <b>${esc(m.nature)}</b> — ${m.natDesc != null ? esc(m.natDesc) : 'loading…'}`;
 
@@ -436,6 +438,18 @@ export function showQueue(remaining){
 }
 
 /* ---------- init ---------- */
+/* Oyun içi Pokémon ID'si (bottan gelen sayısal uid; 'l…' ile başlayanlar sitenin kendi kimliği, gösterilmez). Kopyala: "9853147" ve "[Poke9853147]" */
+const gameId = m => /^\d+$/.test(m.uid ?? '') ? m.uid : null;
+function fillId(row, m){
+  const id = gameId(m); row.hidden = !id; if(!id) return;
+  row.querySelector('.pid').innerHTML = `${id} <button class="mini cp" data-cp="${id}" title="Copy ID">⧉</button><button class="mini cp" data-cp="[Poke${id}]" title="Copy [Poke${id}]">[P]</button>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('.cp'); if(!b) return;
+  e.stopPropagation(); e.preventDefault();
+  navigator.clipboard.writeText(b.dataset.cp).then(() => showMessage({ type:'ok', text:t('✔ Copied: {v}', { v: b.dataset.cp }) }), () => showMessage({ type:'err', text:t('✖ Could not copy: {l}', { l: b.dataset.cp }) }));
+}, true);
+
 export function initUI({ remove, clearAll }){
   removeMonRef = remove;
   clearAllRef = clearAll;
