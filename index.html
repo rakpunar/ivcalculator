@@ -54,6 +54,7 @@
         <button class="mini" id="btnSelAll">Select all</button>
         <button class="mini" id="btnSelNone">Deselect all</button>
         <button class="mini" id="btnSelInv">Invert</button>
+        <button class="mini" id="btnCmp" disabled title="Compare the selected Pokémon (select at least 2)">⚖ Compare</button>
       </div>
       <div class="tb-group" id="bulk"></div>
     </div>
@@ -62,6 +63,8 @@
     <div class="grid" id="grid"></div>
   </div>
 </div>
+
+<dialog id="cmpDlg" class="dlg cmp" closedby="any"><form method="dialog"><div class="cmp-head"><h3>Compare Pokémon</h3><button class="mini" value="close" title="Close">✕</button></div><div id="cmpImp" class="cmp-imp"></div><div id="cmpBody" class="cmp-body"></div></form></dialog>
 
 <dialog id="dlg" class="dlg" closedby="any"><form method="dialog"><p></p>
   <div class="shotrow"><button class="mini" value="ok">OK</button><button class="mini" value="cancel">Cancel</button></div></form></dialog>

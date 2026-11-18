@@ -326,3 +326,20 @@ select.pick{color-scheme:dark}
 .dlg [hidden]{display:none}
 .cp{padding:0 5px;margin-left:4px;font-size:.7rem;line-height:1.5}
 .tiny-row[hidden],.footerline[hidden]{display:none}
+
+/* Karşılaştırma */
+.cmp{width:min(960px,96vw);max-width:96vw}
+.cmp-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.cmp-head h3{margin:0;color:var(--accent);font-size:1.05rem}
+.cmp-imp{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
+.cmpchip{padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--field);color:var(--ink);cursor:pointer;font:inherit;font-size:.8rem}
+.cmpchip.on{border-color:var(--accent);color:var(--accent);background:var(--well)}
+.cmp-body{overflow-x:auto}
+.cmptbl{width:100%;border-collapse:separate;border-spacing:4px;font-size:.9rem}
+.cmptbl th{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;padding:2px 4px;text-align:center}
+.cmptbl th.imp{color:var(--accent)}
+.cmptbl td{background:var(--well);border:2px solid transparent;border-radius:8px;padding:6px 8px;text-align:center;white-space:nowrap}
+.cmptbl td.best{border-color:var(--good)} .cmptbl td.worst{border-color:var(--bad)}
+.cmptbl td small{color:var(--muted)}
+.cmptbl td.who{display:flex;align-items:center;gap:8px;text-align:left}
+.cmptbl .who span{display:flex;flex-direction:column;line-height:1.2}

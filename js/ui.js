@@ -29,7 +29,7 @@ function typeChips(types){
 
 /* Yerel sprite adaylarını sırayla dener; hiçbiri yüklenmezse yer tutucu */
 const io = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting){ io.unobserve(e.target); e.target._go(); } }), { rootMargin: '400px' });
-function setImg(img, cands){
+export function setImg(img, cands){
   const list = (cands ?? []).filter(Boolean); let i = 0;
   const next = () => { if(i >= list.length){ img.onerror = null; img.src = PLACEHOLDER; return; }
     imgSrc(list[i++]).then(cropSprite).then(src => { img.src = src; }).catch(next); }; // boşluklar kırpılır

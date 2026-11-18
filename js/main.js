@@ -5,6 +5,7 @@ import { addMon, removeMon, clearAll, loadInventory } from './state.js';
 import { parsePcExport, runImport } from './import.js';
 import { initBot } from './bot.js';
 import { initShare } from './share.js';
+import { initCompare } from './compare.js';
 import { initI18n, t } from './i18n.js';
 import { initUI, showMessage } from './ui.js';
 import { screenshotToText } from './ocr.js';
@@ -76,7 +77,7 @@ paste.addEventListener('drop', e => { const f = e.dataTransfer?.files?.[0]; if(f
 
 /* Önbelleği atlayarak tüm site dosyalarını yeniden indirir, sonra sayfayı yeniler (envanter localStorage'da kalır).
    shortcut: dosya listesi elle tutuluyor, yeni dosya eklenince buraya da eklenmeli. */
-const SITE_FILES = ['./', 'style.css', 'js/main.js', 'js/ocr.js', 'js/log.js', 'js/sprites.js', 'js/game.js', 'js/import.js', 'js/bot.js', 'js/share.js', 'js/dialog.js', 'js/i18n.js', 'js/api.js', 'js/data.js', 'js/parser.js', 'js/state.js', 'js/stats.js', 'js/ui.js'];
+const SITE_FILES = ['./', 'style.css', 'js/main.js', 'js/ocr.js', 'js/log.js', 'js/sprites.js', 'js/game.js', 'js/import.js', 'js/bot.js', 'js/share.js', 'js/compare.js', 'js/dialog.js', 'js/i18n.js', 'js/api.js', 'js/data.js', 'js/parser.js', 'js/state.js', 'js/stats.js', 'js/ui.js'];
 const btnReload = document.getElementById('btnReload');
 btnReload.addEventListener('click', async () => {
   btnReload.disabled = true; btnReload.textContent = t('Updating…');
@@ -89,4 +90,5 @@ initUI({ remove: removeMon, clearAll });
 loadInventory();
 initBot();
 initShare();
+initCompare();
 initLog();
