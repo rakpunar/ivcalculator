@@ -32,16 +32,20 @@ function build([dex, abil, evo, mega, moves, abDesc, fm]){
     formsOf: root => [root, ...(forms[root] ?? []).filter(id => !isMegaId.has(id))],
     megasOf: root => (megaIds[root] ?? []).map(x => x.id),
     megaStone: id => Object.values(megaIds).flat().find(x => x.id === id)?.stone ?? '',
-    /** evrim zincirinin son halleri (kök hariç) */
-    finalsOf(root){
-      const out = [], seen = new Set([root]);
+    /** PC'den gelen (dex, form) çifti → oyun form id'si (form 1-indeksli; form yoksa dex'in kendisi) */
+    formId: (dex, f) => (+dex < 3000 && f > 0 ? forms[dex]?.[f - 1] : null) ?? +dex,
+    /** form id'nin kendi evrim girdisi var mı (örn. Alolan Rattata 3057 → 3058) */
+    hasEvo: id => !!evo[id]?.length,
+    /** evrim zincirinin son halleri (kök hariç); start = alternatif formdan başlamak için (EvolveDb'de form id'leri de var) */
+    finalsOf(root, start = root){
+      const out = [], seen = new Set([root, start]);
       const walk = id => {
         const next = (evo[id] ?? []).map(e => e[0]).filter(n => !seen.has(n) && dex[n]);
         if(!next.length){ if(id !== root) out.push(id); return; }
         next.forEach(n => { seen.add(n); walk(n); });
       };
-      walk(root);
-      return out;
+      walk(start);
+      return [...new Set(out)];
     },
     abilitiesOf(id){ const a = abil[id]; return a ? [a.A1, a.A2, a.Ha].filter(x => x && x !== 'None') : []; },
     abilityDesc: name => descBy[norm(name)] ?? null,

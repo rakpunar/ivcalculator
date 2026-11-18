@@ -29,7 +29,7 @@ export function pcToMons(exp){
     if(!name || !p.nature || !p.ability){ bad++; continue; }
     out.push({ name, level: +p.level || null, ability: String(p.ability), nature: String(p.nature),
       evs: stats(p.evs), ivs: stats(p.ivs), moves: (p.moves ?? []).filter(Boolean).map(String),
-      tera: null, dex: p.dex ?? null, gform: Number.isInteger(p.form) ? p.form : 0, shiny: !!p.shiny, uid: p.uid != null ? String(p.uid) : null, loading: true });
+      tera: null, dex: p.dex ?? null, gform: Number.isInteger(p.form) ? p.form : 0, shiny: !!p.shiny, uid: p.uid ? String(p.uid) : null, loading: true });
   }
   return { mons: out, bad };
 }

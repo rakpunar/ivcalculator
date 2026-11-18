@@ -105,23 +105,24 @@ export async function resolveView(mon){
   const root = G.rootOf(own), forms = G.formsOf(root);
   if(!forms.includes(own)) forms.unshift(own);
   const num = x => (x == null || x === '' ? NaN : +x); // eski kayıtlardaki PokéAPI adları (metin) yok sayılır
-  let form = forms.includes(num(v.form)) ? num(v.form) : own;
+  const ownForm = G.formId(own, +mon.gform || 0); // alternatif form (Alola vb.): kendi stat/tür/evrim zincirini izler
+  let form = forms.includes(num(v.form)) ? num(v.form) : (forms.includes(ownForm) ? ownForm : own);
   // ability doğrulama: seçili formun gerçek ability listesi
   const has = list => list.some(a => norm(a) === norm(mon.ability));
   let ownAbs = G.abilitiesOf(form), autoForm = null;
-  if(!has(ownAbs) && !forms.includes(num(v.form))){ // form seçilmemiş: ability başka formun ise o formu kullan
+  if(!has(ownAbs) && !forms.includes(num(v.form)) && ownForm === own){ // form oyundan biliniyorsa tahmin yok // form seçilmemiş: ability başka formun ise o formu kullan
     for(const f of forms.filter(x => x !== form)){
       const a = G.abilitiesOf(f);
       if(has(a)){ autoForm = f; form = f; ownAbs = a; break; }
     }
   }
-  const finals = G.finalsOf(root);
+  const finals = G.finalsOf(root, G.hasEvo(ownForm) ? ownForm : root);
   const pickFinal = finals.includes(num(v.finalPick)) ? num(v.finalPick) : finals[0];
-  const megaSp = [root, ...(pickFinal != null ? [pickFinal] : []), ...finals].find(s => G.megasOf(s).length);
+  const megaSp = [root, ...(pickFinal != null ? [pickFinal] : []), ...finals].map(G.rootOf).find(s => G.megasOf(s).length);
 
   let id = form, forms2 = forms;
   if(v.stage === 'final' && pickFinal != null){
-    forms2 = G.formsOf(pickFinal);
+    forms2 = G.formsOf(G.rootOf(pickFinal));
     id = forms2.includes(num(v.form)) ? num(v.form) : pickFinal;
   }
   const megas = megaSp != null ? G.megasOf(megaSp) : [];
