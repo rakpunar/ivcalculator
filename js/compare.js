@@ -2,7 +2,7 @@
    Her stat için sıralama (#1 yeşil, en kötü kırmızı çerçeve); "önemli" işaretlenen statların toplamıyla genel sıralama, canlı hesaplanır. */
 import { mons, on } from './state.js';
 import { calcMon } from './stats.js';
-import { setImg } from './ui.js';
+import { setImg, gameId, idHTML } from './ui.js';
 import { t } from './i18n.js';
 
 const KEYS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe'];
@@ -32,10 +32,10 @@ function render(){
   $('#cmpBody').innerHTML = `<table class="cmptbl"><thead><tr><th>Pokémon</th>` +
     KEYS.map(k => `<th class="${imp.size && !imp.has(k) ? '' : 'imp'}">${LABEL[k]}</th>`).join('') + `<th class="imp">${t('Overall')} <small>(Σ ${keys.map(k => LABEL[k]).join('+')})</small></th></tr></thead><tbody>` +
     order.map(i => { const m = list[i];
-      return `<tr><td class="who"><img width="40" height="40" alt=""><span>${m.eff?.label ?? m.name}<small>Lv.${m.view?.lvl100 ? 100 : (m.level ?? '?')}</small></span></td>` +
+      return `<tr><td class="who"><img width="40" height="40" alt=""><span>${m.eff?.label ?? m.name}<small>Lv.${m.view?.lvl100 ? 100 : (m.level ?? '?')}</small>${gameId(m) ? `<small>ID ${idHTML(gameId(m))}</small>` : ''}</span></td>` +
         KEYS.map((k, j) => cell(per[j].v[i], per[j].r[i], n, per[j].lo, per[j].hi)).join('') +
         cell(overall[i], oRank[i], n, oLo, oHi) + '</tr>'; }).join('') + '</tbody></table>';
-  $('#cmpBody').querySelectorAll('tbody tr').forEach((tr, r) => setImg(tr.querySelector('img'), list[order[r]].imgs));
+  $('#cmpBody').querySelectorAll('tbody tr').forEach((tr, r) => setImg(tr.querySelector('img'), list[order[r]].imgs, list[order[r]]));
 }
 
 async function open(){

@@ -85,6 +85,20 @@ btnReload.addEventListener('click', async () => {
   location.reload();
 });
 
+/* Tema: kayıtlı seçim yoksa sistem temasını izler; düğme açık/koyu arasında geçer */
+const themeSw = document.getElementById('themeSw'), root = document.documentElement;
+const paintTheme = () => { themeSw.textContent = root.dataset.theme === 'light' ? '☀' : '🌙'; };
+themeSw.addEventListener('click', () => {
+  root.dataset.theme = root.dataset.theme === 'light' ? 'dark' : 'light';
+  try{ localStorage.setItem('ivcalc.theme', root.dataset.theme); }catch(e){}
+  paintTheme();
+});
+matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
+  try{ if(localStorage.getItem('ivcalc.theme')) return; }catch(err){}
+  root.dataset.theme = e.matches ? 'light' : 'dark'; paintTheme();
+});
+paintTheme();
+
 initI18n();
 initUI({ remove: removeMon, clearAll });
 loadInventory();

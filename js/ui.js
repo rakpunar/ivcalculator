@@ -29,10 +29,15 @@ function typeChips(types){
 
 /* Yerel sprite adaylarını sırayla dener; hiçbiri yüklenmezse yer tutucu */
 const io = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting){ io.unobserve(e.target); e.target._go(); } }), { rootMargin: '400px' });
-export function setImg(img, cands){
-  const list = (cands ?? []).filter(Boolean); let i = 0;
-  const next = () => { if(i >= list.length){ img.onerror = null; img.src = PLACEHOLDER; return; }
-    imgSrc(list[i++]).then(cropSprite).then(src => { img.src = src; }).catch(next); }; // boşluklar kırpılır
+/* Aday listesi → daha önce yüklenen (kırpılmış) kaynak: yeniden çizimde görsel anında gelir, yanıp sönme olmaz.
+   hold (Pokémon): yeni görsel yüklenirken eskisi gösterilir (evrim/mega geçişinde boşluk olmaz). */
+const shown = new Map();
+export function setImg(img, cands, hold){
+  const list = (cands ?? []).filter(Boolean), key = list.join('|'); let i = 0;
+  if(shown.has(key)){ img.src = shown.get(key); if(hold) hold._src = img.src; return; }
+  if(hold?._src) img.src = hold._src;
+  const next = () => { if(i >= list.length){ img.onerror = null; if(!img.src) img.src = PLACEHOLDER; return; }
+    imgSrc(list[i++]).then(cropSprite).then(src => { shown.set(key, src); if(hold) hold._src = src; img.src = src; }).catch(next); };
   img._go = next; io.observe(img); // görünür olunca yükle
 }
 
@@ -158,7 +163,7 @@ export function renderGrid(){
     node.querySelector('.ctrl').innerHTML = ctrlHTML(m, i);
     node.classList.toggle('picked', !!m.sel);
     node.querySelector('.sel input').checked = !!m.sel;
-    setImg(node.querySelector('img'), m.imgs);
+    setImg(node.querySelector('img'), m.imgs, m);
     node.querySelector('.del').addEventListener('click', e => { e.stopPropagation(); removeMonRef(i); });
     node.querySelector('.lvl').addEventListener('mouseenter', e => showNatureTip(e, m));
     node.querySelector('.lvl').addEventListener('mouseleave', hideTip);
@@ -284,7 +289,7 @@ function renderModal(m){
   root.querySelector('.thlv').textContent = `Lv.${effLevel(m)}`;
   root.querySelector('.m-ctrl').innerHTML = ctrlHTML(m, 'M');
   root.querySelector('.lvl-extra').textContent = m.tera ? 'Tera: ' + m.tera : '';
-  setImg(root.querySelector('img'), m.imgs);
+  setImg(root.querySelector('img'), m.imgs, m);
   root.querySelector('.tv').textContent = tv(m);
   root.querySelector('.tvsum').textContent = tv(m);
   root.querySelector('.tvbar').style.width = (tv(m)/186*100).toFixed(1) + '%';
@@ -439,15 +444,17 @@ export function showQueue(remaining){
 
 /* ---------- init ---------- */
 /* Oyun içi Pokémon ID'si (bottan gelen sayısal uid; 'l…' ile başlayanlar sitenin kendi kimliği, gösterilmez). Kopyala: "9853147" ve "[Poke9853147]" */
-const gameId = m => /^\d+$/.test(m.uid ?? '') ? m.uid : null;
+export const gameId = m => /^\d+$/.test(m.uid ?? '') ? m.uid : null;
+/** ID + kopyala düğmeleri (kart, modal ve karşılaştırma tablosunda ortak) */
+export const idHTML = id => `${id} <button class="mini cp" data-cp="${id}" title="Copy ID">⧉</button><button class="mini cp" data-cp="[Poke${id}]" title="Copy [Poke${id}]">[P]</button>`;
 function fillId(row, m){
   const id = gameId(m); row.hidden = !id; if(!id) return;
-  row.querySelector('.pid').innerHTML = `${id} <button class="mini cp" data-cp="${id}" title="Copy ID">⧉</button><button class="mini cp" data-cp="[Poke${id}]" title="Copy [Poke${id}]">[P]</button>`;
+  row.querySelector('.pid').innerHTML = idHTML(id);
 }
 document.addEventListener('click', e => {
   const b = e.target.closest('.cp'); if(!b) return;
   e.stopPropagation(); e.preventDefault();
-  navigator.clipboard.writeText(b.dataset.cp).then(() => showMessage({ type:'ok', text:t('✔ Copied: {v}', { v: b.dataset.cp }) }), () => showMessage({ type:'err', text:t('✖ Could not copy: {l}', { l: b.dataset.cp }) }));
+  navigator.clipboard.writeText(b.dataset.cp).then(() => { const o = b.textContent; b.textContent = '✓'; setTimeout(() => { b.textContent = o; }, 900); showMessage({ type:'ok', text:t('✔ Copied: {v}', { v: b.dataset.cp }) }); }, () => showMessage({ type:'err', text:t('✖ Could not copy: {l}', { l: b.dataset.cp }) }));
 }, true);
 
 export function initUI({ remove, clearAll }){

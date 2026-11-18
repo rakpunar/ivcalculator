@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>IV Calculator — Pokémon Inventory</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
+<script>try{var t=localStorage.getItem("ivcalc.theme");document.documentElement.dataset.theme=t||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark")}catch(e){document.documentElement.dataset.theme="dark"}</script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,7 +13,7 @@
 <div class="layout">
   <!-- SOL: form -->
   <div class="panel">
-    <div class="langrow"><span id="langSw"></span></div>
+    <div class="langrow"><button class="mini themesw" id="themeSw" title="Switch theme" aria-label="Switch theme"></button><span id="langSw"></span></div>
     <h2>Add Pokémon</h2>
     <textarea id="paste" placeholder="Mankey&#10;Level: 22&#10;Adamant Nature&#10;Ability: Anger Point&#10;EVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe&#10;IVs: 15 HP / 27 Atk / 4 Def / 29 SpA / 28 SpD / 11 Spe&#10;- Cross Chop&#10;- Swagger&#10;- Pursuit&#10;- Seismic Toss"></textarea>
     <div class="shotrow">
