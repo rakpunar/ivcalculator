@@ -346,7 +346,7 @@ kbd{background:var(--panel2);border:1px solid var(--border);border-radius:4px;pa
 .tiny-row[hidden],.footerline[hidden]{display:none}
 
 /* Karşılaştırma */
-.cmp{width:min(1140px,96vw);max-width:96vw}
+.cmp{--u:clamp(14px,.62vw + 6px,30px);font-size:var(--u);width:min(96vw,calc(var(--u) * 80));max-width:96vw;max-height:92vh;overflow:auto}
 .cmp-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .cmp-head h3{margin:0;color:var(--accent-fg);font-size:1.05rem}
 .cmp-imp{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
@@ -390,3 +390,19 @@ button,.card,.seg span,.chip span{transition:background-color .15s,border-color 
 .cmptbl.vert th.whoh{font-weight:400;text-transform:none;letter-spacing:0;color:var(--text)}
 .cmptbl.vert .whoh .who{display:flex;align-items:center;gap:8px;justify-content:center;text-align:left}
 .cmptbl.vert td.info{white-space:nowrap}
+/* Karşılaştırma ölçeği: --u ekran genişliğiyle akar (FHD≈18px, 2K≈22px, 4K≈30px); her şey em ile bağlı */
+.cmp .cmptbl{table-layout:fixed;width:100%;font-size:1em;border-spacing:.3em}
+.cmp .cmptbl th{font-size:.78em}
+.cmp .cmptbl td{padding:.45em .5em;border-width:.12em;border-radius:.5em;white-space:normal;overflow-wrap:anywhere}
+.cmp .cmptbl td small{font-size:.78em}
+.cmp .cmptbl td.txt{min-width:0;line-height:1.45}
+.cmp .cmptbl td.who{gap:.5em}
+.cmp .cmptbl .who img{width:2.9em;height:2.9em;object-fit:contain;flex:none;image-rendering:auto}
+.cmp .cmptbl.vert th:first-child{width:9em}
+.cmp .cmp-head h3{font-size:1.25em}
+.cmp .cmpchip,.cmp .tb-lbl{font-size:.85em}
+.cmp .mini{font-size:.8em}
+.cmp-body{overflow-x:auto}
+/* Tema geçişi: sadece değişim anında, göz yormayan kısa solma */
+html.tx *,html.tx *::before,html.tx *::after,html.tx dialog::backdrop{transition:background-color .4s ease,color .4s ease,border-color .4s ease,box-shadow .4s ease,fill .4s ease!important}
+.cmp .cmptbl th{white-space:normal;overflow-wrap:anywhere}.cmp .cmptbl th small{display:block;text-transform:none;letter-spacing:0}

@@ -33,7 +33,7 @@ function cell(v, rank, n, lo, hi, sub = ''){
   return `<td class="${cls.trim()}"><b>${v}</b> <small title="${t('Rank {r} of {n}', { r: rank, n })}">#${rank}/${n}</small>${sub}</td>`;
 }
 const sub = (m, k) => `<small class="ivev ${natMark(m, k)}">IV ${STATS.get(m.ivs, k)} · EV ${STATS.get(m.evs, k)}</small>`;
-const who = m => `<img width="40" height="40" alt=""><span>${esc(m.eff?.label ?? m.name)}<small>Lv.${m.view?.lvl100 ? 100 : (m.level ?? '?')}</small>${gameId(m) ? `<small>ID ${idHTML(gameId(m))}</small>` : ''}</span>`;
+const who = m => `<img alt=""><span>${esc(m.eff?.label ?? m.name)}<small>Lv.${m.view?.lvl100 ? 100 : (m.level ?? '?')}</small>${gameId(m) ? `<small>ID ${idHTML(gameId(m))}</small>` : ''}</span>`;
 
 function render(){
   const keys = imp.size ? [...imp] : KEYS, n = list.length;
@@ -52,16 +52,15 @@ function render(){
   const info = i => `<td class="info">IV Σ ${sum(list[i].ivs)} · EV Σ ${sum(list[i].evs)}</td>`;
 
   if(lay === 'h'){
-    $('#cmpBody').innerHTML = `<table class="cmptbl"><thead><tr><th>Pokémon</th><th>${t('Nature')}</th><th>${t('Ability')}</th>` +
+    $('#cmpBody').innerHTML = `<table class="cmptbl"><thead><tr><th>Pokémon</th><th>${t('Nature')} / ${t('Ability')}</th>` +
       KEYS.map(k => `<th class="${thCls(k)}">${LABEL[k]}</th>`).join('') + `<th class="imp">${oTh}</th></tr></thead><tbody>` +
       order.map(i => { const m = list[i];
-        return `<tr><td class="who">${who(m)}<small class="sumline">IV Σ ${sum(m.ivs)} · EV Σ ${sum(m.evs)}</small></td><td class="txt">${natText(m)}</td><td class="txt">${abilText(m)}</td>` +
+        return `<tr><td class="who">${who(m)}<small class="sumline">IV Σ ${sum(m.ivs)} · EV Σ ${sum(m.evs)}</small></td><td class="txt">${natText(m)}<br>${abilText(m)}</td>` +
           KEYS.map((_, j) => sCell(j, i)).join('') + oCell(i) + '</tr>'; }).join('') + '</tbody></table>';
   } else {
     $('#cmpBody').innerHTML = `<table class="cmptbl vert"><thead><tr><th></th>` +
       order.map(i => `<th class="whoh"><div class="who">${who(list[i])}</div></th>`).join('') + `</tr></thead><tbody>` +
-      `<tr><th>${t('Nature')}</th>${order.map(i => `<td class="txt">${natText(list[i])}</td>`).join('')}</tr>` +
-      `<tr><th>${t('Ability')}</th>${order.map(i => `<td class="txt">${abilText(list[i])}</td>`).join('')}</tr>` +
+      `<tr><th>${t('Nature')} / ${t('Ability')}</th>${order.map(i => `<td class="txt">${natText(list[i])}<br>${abilText(list[i])}</td>`).join('')}</tr>` +
       KEYS.map((k, j) => `<tr><th class="${thCls(k)}">${LABEL[k]}</th>${order.map(i => sCell(j, i)).join('')}</tr>`).join('') +
       `<tr><th class="imp">${oTh}</th>${order.map(i => oCell(i)).join('')}</tr>` +
       `<tr><th>IV / EV</th>${order.map(i => info(i)).join('')}</tr></tbody></table>`;

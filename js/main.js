@@ -89,6 +89,7 @@ btnReload.addEventListener('click', async () => {
 const themeSw = document.getElementById('themeSw'), root = document.documentElement;
 const paintTheme = () => { themeSw.textContent = root.dataset.theme === 'light' ? '☀' : '🌙'; };
 themeSw.addEventListener('click', () => {
+  root.classList.add('tx'); setTimeout(() => root.classList.remove('tx'), 450); // yumuşak geçiş
   root.dataset.theme = root.dataset.theme === 'light' ? 'dark' : 'light';
   try{ localStorage.setItem('ivcalc.theme', root.dataset.theme); }catch(e){}
   paintTheme();
