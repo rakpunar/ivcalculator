@@ -23,17 +23,23 @@ const sum = (o, keys = KEYS) => keys.reduce((s, k) => s + STATS.get(o, k), 0);
 
 const natMark = (m, k) => m.natureInfo?.inc && STAT_API_TO_KEY[m.natureInfo.inc] === k ? 'up' : m.natureInfo?.dec && STAT_API_TO_KEY[m.natureInfo.dec] === k ? 'down' : '';
 const natText = m => { const ni = m.natureInfo, k = x => LABEL[STAT_API_TO_KEY[x]];
-  return `${esc(m.nature)}${ni?.inc && ni?.dec ? ` <small><i class="up">▲${k(ni.inc)}</i> <i class="down">▼${k(ni.dec)}</i></small>` : ''}`; };
+  return `${esc(m.nature)}${ni?.inc && ni?.dec ? ` <i class="up">▲${k(ni.inc)}</i> <i class="down">▼${k(ni.dec)}</i>` : ''}`; };
 const abilText = m => { const n = m.abName ?? m.ability, ha = m.eff?.hiddenAb, isHA = ha && norm(n) === norm(ha);
-  return `${esc(n)}${isHA ? ' <small class="ha">HA</small>' : ''}${ha && !isHA ? `<small>HA: ${esc(ha)}</small>` : ''}`; };
+  return `${esc(n)}${isHA ? ' <em class="ha">HA</em>' : ''}`; };
 
-function cell(v, rank, n, lo, hi, sub = ''){
-  if(v == null) return '<td class="na">…</td>';
+const STAT_VAR = { HP: 'hp', Atk: 'atk', Def: 'def', SpA: 'spa', SpD: 'spd', Spe: 'spe' };
+const who = m => `<img alt=""><div class="cc-name"><b>${esc(m.eff?.label ?? m.name)}</b><span>Lv.${m.view?.lvl100 ? 100 : (m.level ?? '?')}${gameId(m) ? ` · ID ${idHTML(gameId(m))}` : ''}</span></div>`;
+const tags = m => `<div class="cc-tags"><span class="tag">${natText(m)}</span><span class="tag">${abilText(m)}</span><span class="tag mute">IV Σ ${sum(m.ivs)} · EV Σ ${sum(m.evs)}</span></div>`;
+
+/** Bir stat karosu: etiket, değer + sıra, 0'dan başlayan ölçekli çubuk (ortak maks), alt satırda IV/EV */
+function tile({ label, v, rank, n, lo, hi, max, color, sub = '', dim = false, big = false, mark = '' }){
+  if(v == null) return `<div class="st na"><span class="st-l">${label}</span><span class="st-v">…</span></div>`;
   const cls = hi !== lo ? (rank === 1 ? ' best' : v === lo ? ' worst' : '') : '';   // hepsi eşitse çerçeve yok
-  return `<td class="${cls.trim()}"><b>${v}</b> <small title="${t('Rank {r} of {n}', { r: rank, n })}">#${rank}/${n}</small>${sub}</td>`;
+  return `<div class="st${cls}${dim ? ' dim' : ''}${big ? ' big' : ''}" style="--c:${color};--p:${max ? (100 * v / max).toFixed(1) : 0}%">` +
+    `<span class="st-l">${label}${mark ? `<i class="${mark}">${mark === 'up' ? '▲' : '▼'}</i>` : ''}</span>` +
+    `<span class="st-v"><b>${v}</b><small title="${t('Rank {r} of {n}', { r: rank, n })}">#${rank}/${n}</small></span>` +
+    `<span class="st-m"><i></i></span>${sub ? `<small class="st-s">${sub}</small>` : ''}</div>`;
 }
-const sub = (m, k) => `<small class="ivev ${natMark(m, k)}">IV ${STATS.get(m.ivs, k)} · EV ${STATS.get(m.evs, k)}</small>`;
-const who = m => `<img alt=""><span>${esc(m.eff?.label ?? m.name)}<small>Lv.${m.view?.lvl100 ? 100 : (m.level ?? '?')}</small>${gameId(m) ? `<small>ID ${idHTML(gameId(m))}</small>` : ''}</span>`;
 
 function render(){
   const keys = imp.size ? [...imp] : KEYS, n = list.length;
@@ -45,27 +51,14 @@ function render(){
   const per = KEYS.map(k => { const v = list.map(m => m.calc?.[k] ?? null); const r = rankOf(v), f = v.filter(x => x != null);
     return { v, r, lo: Math.min(...f), hi: Math.max(...f) }; });
   const oF = overall.filter(x => x != null), oLo = Math.min(...oF), oHi = Math.max(...oF);
-  const oCell = i => cell(overall[i], oRank[i], n, oLo, oHi);
-  const sCell = (j, i) => cell(per[j].v[i], per[j].r[i], n, per[j].lo, per[j].hi, sub(list[i], KEYS[j]));
-  const oTh = `${t('Overall')} <small>(Σ ${keys.map(k => LABEL[k]).join('+')})</small>`;
-  const thCls = k => imp.size && !imp.has(k) ? '' : 'imp';
-  const info = i => `<td class="info">IV Σ ${sum(list[i].ivs)} · EV Σ ${sum(list[i].evs)}</td>`;
-
-  if(lay === 'h'){
-    $('#cmpBody').innerHTML = `<table class="cmptbl"><thead><tr><th>Pokémon</th><th>${t('Nature')} / ${t('Ability')}</th>` +
-      KEYS.map(k => `<th class="${thCls(k)}">${LABEL[k]}</th>`).join('') + `<th class="imp">${oTh}</th></tr></thead><tbody>` +
-      order.map(i => { const m = list[i];
-        return `<tr><td class="who">${who(m)}<small class="sumline">IV Σ ${sum(m.ivs)} · EV Σ ${sum(m.evs)}</small></td><td class="txt">${natText(m)}<br>${abilText(m)}</td>` +
-          KEYS.map((_, j) => sCell(j, i)).join('') + oCell(i) + '</tr>'; }).join('') + '</tbody></table>';
-  } else {
-    $('#cmpBody').innerHTML = `<table class="cmptbl vert"><thead><tr><th></th>` +
-      order.map(i => `<th class="whoh"><div class="who">${who(list[i])}</div></th>`).join('') + `</tr></thead><tbody>` +
-      `<tr><th>${t('Nature')} / ${t('Ability')}</th>${order.map(i => `<td class="txt">${natText(list[i])}<br>${abilText(list[i])}</td>`).join('')}</tr>` +
-      KEYS.map((k, j) => `<tr><th class="${thCls(k)}">${LABEL[k]}</th>${order.map(i => sCell(j, i)).join('')}</tr>`).join('') +
-      `<tr><th class="imp">${oTh}</th>${order.map(i => oCell(i)).join('')}</tr>` +
-      `<tr><th>IV / EV</th>${order.map(i => info(i)).join('')}</tr></tbody></table>`;
-  }
-  $('#cmpBody').querySelectorAll('img').forEach((img, r) => setImg(img, list[order[r]].imgs, list[order[r]]));
+  const card = i => { const m = list[i];
+    return `<article class="cc"><header class="cc-id">${who(m)}${tags(m)}</header><div class="cc-stats">` +
+      KEYS.map((k, j) => tile({ label: LABEL[k], v: per[j].v[i], rank: per[j].r[i], n, lo: per[j].lo, hi: per[j].hi, max: per[j].hi,
+        color: `var(--${STAT_VAR[k]})`, sub: `IV ${STATS.get(m.ivs, k)} · EV ${STATS.get(m.evs, k)}`, dim: imp.size > 0 && !imp.has(k), mark: natMark(m, k) })).join('') +
+      tile({ label: `${t('Overall')} Σ`, v: overall[i], rank: oRank[i], n, lo: oLo, hi: oHi, max: oHi, color: 'var(--accent)', big: true }) +
+      '</div></article>'; };
+  $('#cmpBody').innerHTML = `<div class="cmp-list ${lay}">${order.map(card).join('')}</div>`;
+  $('#cmpBody').querySelectorAll('.cc img').forEach((img, r) => setImg(img, list[order[r]].imgs, list[order[r]]));
 }
 
 async function open(){
