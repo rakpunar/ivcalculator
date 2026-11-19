@@ -168,6 +168,13 @@ export function removeMon(index){
   return m;
 }
 
+/** koşula uyanları sessizce çıkarır (toplu işlemler için); çıkarılan sayısını döndürür */
+export function removeMons(fn){
+  let n = 0; for(let i = mons.length - 1; i >= 0; i--) if(fn(mons[i])){ mons.splice(i, 1); n++; }
+  if(n){ saveInventory(); emit('grid'); }
+  return n;
+}
+
 export function clearAll(){
   mons.length = 0;
   saveInventory();
