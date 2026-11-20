@@ -403,3 +403,13 @@ html.tx *,html.tx *::before,html.tx *::after,html.tx dialog::backdrop{transition
 .st-m{display:block;height:.45em;border-radius:.25em;background:color-mix(in srgb,var(--c) 20%,transparent);overflow:hidden}
 .st-m i{display:block;height:100%;width:var(--p);background:var(--c);border-radius:0 .25em .25em 0}
 @media(max-width:900px){.cmp-list.h .cc{grid-template-columns:1fr}.cmp-list.h .cc-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Aramalı çoklu seçim açılır listesi (Pokémon / Ability filtresi) */
+.ms{position:relative}
+.ms-sum{list-style:none;cursor:pointer;user-select:none}.ms-sum::-webkit-details-marker{display:none}
+.ms-sum.on{border-color:var(--accent);color:var(--accent-fg)}
+.ms-pop{position:absolute;z-index:40;top:calc(100% + 4px);left:0;min-width:16rem;display:flex;flex-direction:column;gap:6px;padding:8px;background:var(--panel);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow)}
+.ms-list{overflow:auto;display:flex;flex-direction:column;max-height:14rem}
+.ms-o{display:flex;gap:8px;align-items:center;padding:4px 6px;border-radius:6px;cursor:pointer;font-size:.85rem}
+.ms-o:hover{background:var(--well)}.ms-o[hidden]{display:none}.ms-o small{margin-left:auto;color:var(--muted)}
+.ms-none{color:var(--muted);padding:4px 6px}

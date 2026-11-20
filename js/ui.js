@@ -74,7 +74,14 @@ function ctrlHTML(m, i){ // i: radyo grup adı eki (kart indeksi veya 'M' = moda
 
 /* ---------- filtre / sıralama (yalnızca görünüm; envanter sırası değişmez) ---------- */
 const IVK = ['HP','Atk','Def','SpA','SpD','Spe'];
-const F = { q:'', nature:'', type:'', minIV:0, minLv:0, perfect:0, shiny:false, form:false, hp:'', sort:'', dir:1 };
+const F = { q:'', nature:'', type:'', minIV:0, minLv:0, perfect:0, shiny:false, form:false, hp:'', sort:'', dir:1, onlySel:false, sp:new Set(), ab:new Set() };
+/* Kayıtlı filtreler: kriterler saklanır (Pokémon listesi değil); seçilince her seferinde güncel envantere uygulanır */
+const PLS = 'ivcalc.filters.v1';
+let PRE = (() => { try{ return JSON.parse(localStorage.getItem(PLS) || '{}'); }catch(e){ return {}; } })(), curPre = '';
+const savePre = () => { try{ localStorage.setItem(PLS, JSON.stringify(PRE)); }catch(e){} };
+const DEFF = { q:'', nature:'', type:'', minIV:0, minLv:0, perfect:0, shiny:false, form:false, hp:'', sort:'', dir:1, onlySel:false };
+const nk = s => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+const abilsOf = m => (m.eff?.ownAbilities ?? [m.ability]).map(nk);   // türün olası ability'leri
 const hpChip = m => { const ty = hiddenPower(m.ivs); return `<span class="type-icon t-${ty}" style="width:auto;padding:0 8px">${ty.toUpperCase()}</span>`; };
 const isForm = m => +m.dex >= 3000 || +m.gform > 0 || (!!m.eff && !m.eff.isMega && m.eff.id !== m.eff.base?.species); // alternatif form (bölgesel, shadow, baby, event…)
 const perfect = m => IVK.filter(k => STATS.get(m.ivs, k) >= 31).length;
@@ -87,6 +94,10 @@ const passes = m => {
   if(F.shiny && !m.shiny) return false;
   if(F.form && !isForm(m)) return false;
   if(F.hp && hiddenPower(m.ivs) !== F.hp) return false;
+  if(F.onlySel && !m.sel) return false;
+  if(F.sp.size && !F.sp.has(m.name)) return false;
+  // seçili ability türün ability'leriyle hiç kesişmiyorsa o Pokémon için ability filtresi yokmuş gibi sayılır (tür seçiliyken)
+  if(F.ab.size && (!F.sp.size || abilsOf(m).some(k => F.ab.has(k))) && !F.ab.has(nk(m.ability))) return false;
   if(F.q){ const h = [m.name, m.eff?.label, m.nature, m.ability, m.abName, ...(m.moves ?? [])].join(' ').toLowerCase();
     return F.q.split(/\s+/).every(t => h.includes(t)); }
   return true;
@@ -97,11 +108,33 @@ const visible = () => {
   if(f) a.sort((x, y) => { const p = f(mons[x]), q = f(mons[y]); return (p < q ? -1 : p > q ? 1 : x - y) * F.dir; });
   return a;
 };
+const msShell = (id, lbl) => `<details class="ms" id="${id}"><summary class="pick ms-sum"></summary><div class="ms-pop"><input class="inp ms-q" type="search" placeholder="Search…" aria-label="${lbl}"><div class="ms-list"></div><button type="button" class="mini ms-clr">Clear</button></div></details>`;
+const msHide = d => { const q = d.querySelector('.ms-q').value.trim().toLowerCase(); d.querySelectorAll('.ms-o').forEach(l => { l.hidden = !!q && !l.textContent.toLowerCase().includes(q); }); };
+/** açılır listeyi yerinde günceller (açık durum ve arama metni korunur); opts: [{v,t,n}] */
+function fillMs(id, lbl, opts, sel){
+  const d = $('#' + id); if(!d) return;
+  d.querySelector('.ms-list').innerHTML = opts.map(o => `<label class="ms-o"><input type="checkbox" data-v="${esc(o.v)}"${sel.has(o.v) ? ' checked' : ''}><span>${esc(o.t)}</span><small>${o.n}</small></label>`).join('') || '<i class="ms-none">—</i>';
+  d.querySelector('summary').textContent = t(lbl) + (sel.size ? ` · ${sel.size}` : ': ' + t('any'));
+  d.querySelector('summary').classList.toggle('on', sel.size > 0);
+  msHide(d);
+}
+function fillMsAll(){
+  const sp = new Map(); mons.forEach(m => sp.set(m.name, (sp.get(m.name) ?? 0) + 1));
+  [...F.sp].forEach(k => { if(!sp.has(k)) F.sp.delete(k); });
+  fillMs('fsp', 'Pokémon', [...sp].sort((a, b) => a[0].localeCompare(b[0])).map(([v, n]) => ({ v, t: v, n })), F.sp);
+  const ab = new Map(); // anahtar -> {t, n}: tür seçiliyse türlerin olası ability'leri, değilse listedeki ability'ler
+  (F.sp.size ? mons.filter(m => F.sp.has(m.name)) : mons).forEach(m => {
+    if(F.sp.size) (m.eff?.ownAbilities ?? []).forEach(a => { if(!ab.has(nk(a))) ab.set(nk(a), { t: a, n: 0 }); });
+    const k = nk(m.ability); if(!ab.has(k)) ab.set(k, { t: m.ability, n: 0 }); ab.get(k).n++;
+  });
+  [...F.ab].forEach(k => { if(!ab.has(k)) F.ab.delete(k); });
+  fillMs('fab', 'Ability', [...ab].sort((a, b) => a[1].t.localeCompare(b[1].t)).map(([v, o]) => ({ v, t: o.t, n: o.n })), F.ab);
+}
 function initFilter(){
   const el = $('#filters'), opt = (v, t) => `<option value="${v}">${t}</option>`;
   const natures = [...new Set(mons.map(m => m.nature).filter(Boolean))].sort();
   const types = [...new Set(mons.flatMap(m => m.types ?? []))].sort();
-  const sig = natures.join() + '|' + types.join();
+  const sig = natures.join() + '|' + types.join() + '|' + Object.keys(PRE).join('\n') + '|' + curPre;
   if(el.dataset.sig === sig) return; el.dataset.sig = sig;
   const num = (id, lbl, max, v) => `<label class="fld"><span>${lbl}</span><input id="${id}" class="inp" type="number" inputmode="numeric" min="0" max="${max}" placeholder="0" value="${v || ''}"></label>`;
   el.innerHTML = `<div class="f-row">
@@ -117,20 +150,36 @@ function initFilter(){
       ${num('fiv', 'IV ≥', 186, F.minIV)}${num('fpf', '31s ≥', 6, F.perfect)}${num('flv', 'Lv ≥', 100, F.minLv)}
       <label class="chip"><input id="fsh" type="checkbox"${F.shiny ? ' checked' : ''}><span>★ Shiny</span></label>
       <label class="chip"><input id="ffm" type="checkbox"${F.form ? ' checked' : ''}><span>◆ Forms</span></label>
+      <label class="chip"><input id="fos" type="checkbox"${F.onlySel ? ' checked' : ''}><span>☑ Selected only</span></label>
+      ${msShell('fsp', 'Pokémon')}${msShell('fab', 'Ability')}
+      <select id="fpre" class="pick" aria-label="Saved filters">${opt('', 'Saved filters')}${Object.keys(PRE).map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('')}</select>
+      <input id="fpn" class="inp" type="text" maxlength="40" placeholder="Filter name…" aria-label="Filter name">
+      <button class="mini" id="fpsave" title="Save the current filters under this name">💾 Save filter</button><button class="mini" id="fpdel" title="Delete the selected saved filter">✕</button>
       <span class="f-end"><span id="fcnt"></span><button class="mini" id="fclr">Reset</button></span>
     </div>`;
+  fillMsAll();
+  $('#fpre').value = curPre; $('#fpn').value = curPre;
   $('#fnat').value = F.nature; $('#ftype').value = F.type; $('#fhp').value = F.hp; $('#fsort').value = F.sort;
 }
 function initFilterEvents(){
   const set = () => { Object.assign(F, { q: $('#fq').value.trim().toLowerCase(), nature: $('#fnat').value, type: $('#ftype').value, hp: $('#fhp').value,
-    minIV: +$('#fiv').value || 0, perfect: +$('#fpf').value || 0, minLv: +$('#flv').value || 0, shiny: $('#fsh').checked, form: $('#ffm').checked, sort: $('#fsort').value }); renderGrid(); };
+    minIV: +$('#fiv').value || 0, perfect: +$('#fpf').value || 0, minLv: +$('#flv').value || 0, shiny: $('#fsh').checked, form: $('#ffm').checked, onlySel: $('#fos').checked, sort: $('#fsort').value }); renderGrid(); };
   const el = $('#filters'); let t;
-  el.addEventListener('input', () => { clearTimeout(t); t = setTimeout(set, 150); });
-  el.addEventListener('change', set);
+  el.addEventListener('input', e => { if(e.target.classList.contains('ms-q')) return msHide(e.target.closest('.ms')); clearTimeout(t); t = setTimeout(set, 150); });
+  el.addEventListener('change', e => {
+    if(e.target.id === 'fpre'){ curPre = e.target.value; if(PRE[curPre]){ const o = PRE[curPre]; Object.assign(F, DEFF, o, { sp: new Set(o.sp), ab: new Set(o.ab) }); } el.dataset.sig = ''; return renderGrid(); }
+    const cb = e.target.closest('.ms-o input'); if(!cb) return set();
+    const S = cb.closest('.ms').id === 'fsp' ? F.sp : F.ab; cb.checked ? S.add(cb.dataset.v) : S.delete(cb.dataset.v); renderGrid();
+  });
+  document.addEventListener('click', e => document.querySelectorAll('.ms[open]').forEach(d => { if(!d.contains(e.target)) d.open = false; }));
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') document.querySelectorAll('.ms[open]').forEach(d => { d.open = false; }); });
   el.addEventListener('click', e => {
     if(e.target.id === 'fdir'){ F.dir = -F.dir; renderGrid(); }
     else if(e.target.id === 'ftoggle'){ const o = el.classList.toggle('open'); e.target.setAttribute('aria-expanded', o); }
-    else if(e.target.id === 'fclr'){ Object.assign(F, { q:'', nature:'', type:'', minIV:0, minLv:0, perfect:0, shiny:false, form:false, hp:'', sort:'', dir:1 }); el.dataset.sig = ''; renderGrid(); }
+    else if(e.target.id === 'fpsave'){ const n = $('#fpn').value.trim(); if(!n) return; PRE[n] = { ...F, sp: [...F.sp], ab: [...F.ab] }; savePre(); curPre = n; el.dataset.sig = ''; renderGrid(); }
+    else if(e.target.id === 'fpdel'){ if(!PRE[curPre]) return; delete PRE[curPre]; savePre(); curPre = ''; el.dataset.sig = ''; renderGrid(); }
+    else if(e.target.classList.contains('ms-clr')){ (e.target.closest('.ms').id === 'fsp' ? F.sp : F.ab).clear(); renderGrid(); }
+    else if(e.target.id === 'fclr'){ Object.assign(F, { q:'', nature:'', type:'', minIV:0, minLv:0, perfect:0, shiny:false, form:false, hp:'', sort:'', dir:1, onlySel:false }); F.sp.clear(); F.ab.clear(); el.dataset.sig = ''; renderGrid(); }
   });
 }
 
@@ -140,7 +189,8 @@ export function renderGrid(){
   $('#count').textContent = mons.length;
   $('#fcnt').textContent = `${order.length} / ${mons.length}`;
   $('#fdir').textContent = F.dir > 0 ? '↑ Asc' : '↓ Desc';
-  const active = [F.nature, F.type, F.hp, F.minIV, F.perfect, F.minLv, F.shiny, F.form].filter(Boolean).length; // telefonda gizli filtre sayısı
+  fillMsAll();
+  const active = [F.nature, F.type, F.hp, F.minIV, F.perfect, F.minLv, F.shiny, F.form, F.onlySel, F.sp.size, F.ab.size].filter(Boolean).length; // telefonda gizli filtre sayısı
   $('#ftoggle').textContent = active ? t('Filters · {n}', { n: active }) : 'Filters';
   $('#ftoggle').classList.toggle('on', active > 0);
   const slot = $('#emptySlot'); slot.remove();
