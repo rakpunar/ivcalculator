@@ -2,7 +2,7 @@
 import { parsePcExport, runImport } from './import.js';
 import { t } from './i18n.js';
 import { noticeBox, confirmBox } from './dialog.js';
-import { mons, on, removeMons } from './state.js';
+import { mons, on, relUids, setRelList } from './state.js';
 import { showMessage } from './ui.js';
 
 const PORTS = [47831, 47832, 47833, 47834, 47835];
@@ -32,30 +32,30 @@ function show(d){
   syncRel();
 }
 
-/* ---- salma isteği: seçili Pokémon'ları bota gönder; bot oyunda kullanıcıya sorar ve otomasyonla bırakır ---- */
-const relIds = () => mons.filter(m => m.sel && /^\d+$/.test(m.uid ?? '')).map(m => m.uid).slice(0, 2000);
+/* ---- salma listesi: seçilenleri botun listesine ekler (salmayı kullanıcı uygulamada yapar); liste relRev ile senkron ---- */
+const relIds = () => mons.filter(m => m.sel && /^\d+$/.test(m.uid ?? '') && !relUids.has(m.uid)).map(m => m.uid).slice(0, 2000);
 function syncRel(){ const n = relIds().length; const b = $('btnRel'); b.disabled = !lastD || n < 1; b.textContent = `🗑 ${t('Release via bot')}${n ? ` (${n})` : ''}`; }
 
 async function sendRelease(){
   const uids = relIds(); if(!uids.length) return;
-  if(!(await confirmBox(t('Send a release request for {n} Pokémon to the bot? The bot asks you in-game before releasing anything.', { n: uids.length }), { ok: 'Send request', danger: true }))) return;
+  if(!(await confirmBox(t("Add {n} Pokémon to the bot's release list? You decide in the app when to release them.", { n: uids.length }), { ok: 'Add to list', danger: true }))) return;
   try{
     // text/plain: preflight (OPTIONS) gerektirmez; gövde yine JSON
     const r = await (await fetch(url('/release'), { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ uids }), signal: AbortSignal.timeout(8000) })).json();
     if(!r?.ok) throw new Error('rejected');
-    showMessage({ type: 'ok', text: t('✔ Release request sent: {n} new.', { n: r.queued ?? 0 }) });
+    showMessage({ type: 'ok', text: t("✔ Sent to the bot's release list: {n} new.", { n: r.received ?? 0 }) });
+    relPull(true);
   }catch(e){ noticeBox(t('Release request failed: {err}', { err: e.message })); }
 }
 
-/** Botun bıraktıklarını (done) envanterden düşer, iptal/bırakılamayanları (declined) bildirir, sonra ack gönderir */
-async function releaseSync(){
-  const r = await get('/release', 4000).catch(() => null);
-  if(!r || !(r.done?.length || r.declined?.length)) return;
-  const done = new Set((r.done ?? []).map(String));
-  const n = removeMons(m => done.has(String(m.uid)));
-  if(n) showMessage({ type: 'ok', text: t('🗑 {n} Pokémon released by the bot.', { n }) });
-  if(r.declined?.length) showMessage({ type: 'err', text: t('{n} release request(s) declined or not possible.', { n: r.declined.length }) });
-  await fetch(url('/release/ack'), { method: 'POST', signal: AbortSignal.timeout(5000) }).catch(() => {});
+/** Botun salma listesini çeker (GET /rellist), kartlardaki 🗑 işaretini günceller; ilk eşitlemede yalnız doluysa bildirir */
+let relRev, relSynced = false;
+async function relPull(quiet){
+  const r = await get('/rellist', 4000).catch(() => null);
+  if(!r || !Array.isArray(r.uids)) return;
+  const first = !relSynced; relSynced = true; relRev = r.rev;
+  const n = setRelList(r.uids);
+  if(!quiet && (!first || n)) showMessage({ type: 'ok', text: t('Release list updated: {n} Pokémon', { n }) });
 }
 
 /** Zarfı içe aktarır; bitince (kullanıcı OK'layınca) döner. ack=true: bot'a "tamam" bildirir. */
@@ -79,7 +79,8 @@ async function poll(){
   if(!document.hidden && !busy){
     const d = await ping(); show(d);
     if(d?.pending > 0 && Date.now() > cooldownUntil) await doImport('/outbox', true);
-    if(d) await releaseSync();
+    if(d && (!relSynced || (d.relRev !== undefined && d.relRev !== relRev))) await relPull();
+    if(!d) relSynced = false;   // bot kapandı: tekrar bağlanınca tam eşitleme
   }
   timer = setTimeout(poll, port ? 3000 : 10000);
 }

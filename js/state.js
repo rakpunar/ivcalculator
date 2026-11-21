@@ -168,11 +168,11 @@ export function removeMon(index){
   return m;
 }
 
-/** koşula uyanları sessizce çıkarır (toplu işlemler için); çıkarılan sayısını döndürür */
-export function removeMons(fn){
-  let n = 0; for(let i = mons.length - 1; i >= 0; i--) if(fn(mons[i])){ mons.splice(i, 1); n++; }
-  if(n){ saveInventory(); emit('grid'); }
-  return n;
+/** botun salma listesi (uid'ler); değişince kartlar yeniden çizilir */
+export const relUids = new Set();
+export function setRelList(uids){
+  relUids.clear(); uids.forEach(u => relUids.add(String(u))); emit('grid');
+  return relUids.size;
 }
 
 export function clearAll(){

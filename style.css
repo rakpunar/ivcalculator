@@ -413,3 +413,6 @@ html.tx *,html.tx *::before,html.tx *::after,html.tx dialog::backdrop{transition
 .ms-o{display:flex;gap:8px;align-items:center;padding:4px 6px;border-radius:6px;cursor:pointer;font-size:.85rem}
 .ms-o:hover{background:var(--well)}.ms-o[hidden]{display:none}.ms-o small{margin-left:auto;color:var(--muted)}
 .ms-none{color:var(--muted);padding:4px 6px}
+/* Botun salma listesindeki Pokémon */
+.card.inrel{outline:2px dashed var(--bad);outline-offset:-2px}
+.card.inrel::after{content:'🗑';position:absolute;top:6px;left:8px;font-size:1rem}

@@ -5,7 +5,7 @@ import { PLACEHOLDER, cropSprite } from './sprites.js';
 import { calcMon, effLevel, hiddenPower, HP_TYPES } from './stats.js';
 import { t } from './i18n.js';
 import { confirmBox } from './dialog.js';
-import { mons, on, setView, bulkView, stageAvailable, megaAvailable, setSel, selectAll, refreshView, setEv, resetEvs, evTotal, evsChanged, EV_MAX, EV_TOTAL } from './state.js';
+import { mons, on, setView, bulkView, stageAvailable, megaAvailable, setSel, selectAll, refreshView, setEv, resetEvs, evTotal, evsChanged, EV_MAX, EV_TOTAL, relUids } from './state.js';
 
 const $  = sel => document.querySelector(sel);
 const grid = $('#grid');
@@ -198,6 +198,7 @@ export function renderGrid(){
   order.forEach(i => { const m = mons[i];
     const node = $('#tpl-card').content.firstElementChild.cloneNode(true);
     node.dataset.i = i;
+    node.classList.toggle('inrel', relUids.has(String(m.uid)));
     node.querySelector('.name').textContent = (m.eff?.label ?? m.name) + (m.loading ? ' ⏳' : '');
     node.querySelector('.lvl').textContent = t('Lv. {l} · {n} Nature', { l: m.view.lvl100 ? 100 : (m.level ?? '?'), n: m.nature });
     node.querySelector('.ability').textContent = m.abName ?? m.ability;
