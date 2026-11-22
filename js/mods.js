@@ -17,6 +17,8 @@ export const ITEMS = {
   'quick-powder':  { n: 'Quick Powder',  mul: { Spe: 2 }, sp: only(132) },
   'macho-brace':   { n: 'Macho Brace',   mul: { Spe: 0.5 } },
   'iron-ball':     { n: 'Iron Ball',     mul: { Spe: 0.5 } },
+  'flame-orb':     { n: 'Flame Orb',     st: 'brn' },   // durum verir: ability'ye göre stat etkisi (burn Atk ×0.5, Guts hariç)
+  'toxic-orb':     { n: 'Toxic Orb',     st: 'tox' },
   'power-items':   { n: 'Power Anklet/Band/…', mul: { Spe: 0.5 } },
 };
 export const ABILITIES = {   // c = koşul (yoksa sabit etki: kendi ability'si ise otomatik uygulanır)
@@ -63,9 +65,11 @@ export const modText = (tbl, k) => (fmt(tbl[k]?.mul) || (tbl[k]?.high ? 'best st
 export function modsFor(m, out){
   const mul = {}, add = d => { if(d) for(const [s, v] of Object.entries(d.mul ?? {})) mul[s] = (mul[s] ?? 1) * v; };
   // ability: '' = otomatik (kendi ability'si sabit etkiliyse uygulanır), 'none' = hiçbiri, aksi halde seçilen (koşullular "koşul aktif" sayılır)
-  const sel = m.view?.abil, own = abKey(m.abName ?? m.ability);
-  const ab = sel === 'none' ? null : sel ? ABILITIES[sel] : (own && !ABILITIES[own].c ? ABILITIES[own] : null);
-  const it = ITEMS[m.view?.item];
+  const sel = m.view?.abil, own = abKey(m.abName ?? m.ability), it = ITEMS[m.view?.item];
+  const stOf = { status: ['brn', 'tox'], poisoned: ['tox'], burned: ['brn'] };   // eşyanın verdiği durum, ability koşulunu sağlar mı
+  const met = c => !c || (it?.st && stOf[c]?.includes(it.st));
+  const ab = sel === 'none' ? null : sel ? ABILITIES[sel] : (own && met(ABILITIES[own].c) ? ABILITIES[own] : null);
+  if(it?.st === 'brn' && ab !== ABILITIES.guts) mul.Atk = (mul.Atk ?? 1) * 0.5;   // burn: fiziksel yarılama (Guts'ta yok)
   if(it && (!it.sp || it.sp.includes(m.base?.species)) && (!it.evo || m.eff?.canEvo)) add(it);
   add(ab);
   if(ab?.high && out){ const best = ['Atk', 'Def', 'SpA', 'SpD', 'Spe'].reduce((a, k) => (out[k] > out[a] ? k : a), 'Atk'); mul[best] = (mul[best] ?? 1) * (best === 'Spe' ? 1.5 : 1.3); }
