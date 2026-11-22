@@ -50,7 +50,11 @@ const abKey = name => Object.keys(ABILITIES).find(k => NK(k) === NK(name));
 /** oyundaki eşya adı → tablo anahtarı ('' = stat etkisi yok / bilinmiyor) */
 export const itemKey = name => Object.keys(ITEMS).find(k => NK(ITEMS[k].n) === NK(name)) ?? '';
 /** Pokémon'un kendi (seçilebilir) ability'lerinden stat etkisi olanlar: [{k, n}] */
-export const abilOptions = m => (m.eff?.ownAbilities ?? [m.ability]).map(abKey).filter(Boolean).map(k => ({ k, n: ABILITIES[k].n }));
+export const abilOptions = m => {   // simülasyon: tüm tablo; türün kendi ability'leri başta (★)
+  const own = new Set((m.eff?.ownAbilities ?? [m.ability]).map(abKey).filter(Boolean));
+  const o = k => ({ k, n: (own.has(k) ? '★ ' : '') + ABILITIES[k].n });
+  return [...own, ...Object.keys(ABILITIES).filter(k => !own.has(k))].map(o);
+};
 export const itemOptions = m => Object.entries(ITEMS).filter(([, d]) => (!d.sp || d.sp.includes(m.base?.species)) && (!d.evo || m.eff?.canEvo)).map(([k, d]) => ({ k, n: d.n }));
 const fmt = mul => Object.entries(mul ?? {}).map(([s, v]) => `${s} ×${+v.toFixed(2)}`).join(', ') || '';
 export const modText = (tbl, k) => (fmt(tbl[k]?.mul) || (tbl[k]?.high ? 'best stat ×1.3' : '')) + (tbl[k]?.c ? ` · if ${tbl[k].c}` : '');
