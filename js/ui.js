@@ -77,10 +77,7 @@ function ctrlHTML(m, i){ // i: radyo grup adı eki (kart indeksi veya 'M' = moda
 const IVK = ['HP','Atk','Def','SpA','SpD','Spe'];
 const F = { q:'', nature:'', type:'', minIV:0, minLv:0, perfect:0, shiny:false, form:false, hp:'', sort:'', dir:1, onlySel:false, sp:new Set(), ab:new Set() };
 /* Kayıtlı filtreler: kriterler saklanır (Pokémon listesi değil); seçilince her seferinde güncel envantere uygulanır */
-const PLS = 'ivcalc.filters.v1';
-let PRE = (() => { try{ return JSON.parse(localStorage.getItem(PLS) || '{}'); }catch(e){ return {}; } })(), curPre = '';
-const savePre = () => { try{ localStorage.setItem(PLS, JSON.stringify(PRE)); }catch(e){} };
-const DEFF = { q:'', nature:'', type:'', minIV:0, minLv:0, perfect:0, shiny:false, form:false, hp:'', sort:'', dir:1, onlySel:false };
+try{ localStorage.removeItem('ivcalc.filters.v1'); }catch(e){}   // eski kayıtlı filtreler kaldırıldı
 const nk = s => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
 const abilsOf = m => (m.eff?.ownAbilities ?? [m.ability]).map(nk);   // türün olası ability'leri
 const hpChip = m => { const ty = hiddenPower(m.ivs); return `<span class="type-icon t-${ty}" style="width:auto;padding:0 8px">${ty.toUpperCase()}</span>`; };
@@ -134,7 +131,7 @@ function initFilter(){
   const el = $('#filters'), opt = (v, t) => `<option value="${v}">${t}</option>`;
   const natures = [...new Set(mons.map(m => m.nature).filter(Boolean))].sort();
   const types = [...new Set(mons.flatMap(m => m.types ?? []))].sort();
-  const sig = natures.join() + '|' + types.join() + '|' + Object.keys(PRE).join('\n') + '|' + curPre;
+  const sig = natures.join() + '|' + types.join();
   if(el.dataset.sig === sig) return; el.dataset.sig = sig;
   const num = (id, lbl, max, v) => `<label class="fld"><span>${lbl}</span><input id="${id}" class="inp" type="number" inputmode="numeric" min="0" max="${max}" placeholder="0" value="${v || ''}"></label>`;
   el.innerHTML = `<div class="f-row">
@@ -152,13 +149,9 @@ function initFilter(){
       <label class="chip"><input id="ffm" type="checkbox"${F.form ? ' checked' : ''}><span>◆ Forms</span></label>
       <label class="chip"><input id="fos" type="checkbox"${F.onlySel ? ' checked' : ''}><span>☑ Selected only</span></label>
       ${msShell('fsp', 'Pokémon')}${msShell('fab', 'Ability')}
-      <select id="fpre" class="pick" aria-label="Saved filters">${opt('', 'Saved filters')}${Object.keys(PRE).map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('')}</select>
-      <input id="fpn" class="inp" type="text" maxlength="40" placeholder="Filter name…" aria-label="Filter name">
-      <button class="mini" id="fpsave" title="Save the current filters under this name">💾 Save filter</button><button class="mini" id="fpdel" title="Delete the selected saved filter">✕</button>
       <span class="f-end"><span id="fcnt"></span><button class="mini" id="fclr">Reset</button></span>
     </div>`;
   fillMsAll();
-  $('#fpre').value = curPre; $('#fpn').value = curPre;
   $('#fnat').value = F.nature; $('#ftype').value = F.type; $('#fhp').value = F.hp; $('#fsort').value = F.sort;
 }
 function initFilterEvents(){
@@ -167,7 +160,6 @@ function initFilterEvents(){
   const el = $('#filters'); let t;
   el.addEventListener('input', e => { if(e.target.classList.contains('ms-q')) return msHide(e.target.closest('.ms')); clearTimeout(t); t = setTimeout(set, 150); });
   el.addEventListener('change', e => {
-    if(e.target.id === 'fpre'){ curPre = e.target.value; if(PRE[curPre]){ const o = PRE[curPre]; Object.assign(F, DEFF, o, { sp: new Set(o.sp), ab: new Set(o.ab) }); } el.dataset.sig = ''; return renderGrid(); }
     const cb = e.target.closest('.ms-o input'); if(!cb) return set();
     const S = cb.closest('.ms').id === 'fsp' ? F.sp : F.ab; cb.checked ? S.add(cb.dataset.v) : S.delete(cb.dataset.v); renderGrid();
   });
@@ -176,8 +168,6 @@ function initFilterEvents(){
   el.addEventListener('click', e => {
     if(e.target.id === 'fdir'){ F.dir = -F.dir; renderGrid(); }
     else if(e.target.id === 'ftoggle'){ const o = el.classList.toggle('open'); e.target.setAttribute('aria-expanded', o); }
-    else if(e.target.id === 'fpsave'){ const n = $('#fpn').value.trim(); if(!n) return; PRE[n] = { ...F, sp: [...F.sp], ab: [...F.ab] }; savePre(); curPre = n; el.dataset.sig = ''; renderGrid(); }
-    else if(e.target.id === 'fpdel'){ if(!PRE[curPre]) return; delete PRE[curPre]; savePre(); curPre = ''; el.dataset.sig = ''; renderGrid(); }
     else if(e.target.classList.contains('ms-clr')){ (e.target.closest('.ms').id === 'fsp' ? F.sp : F.ab).clear(); renderGrid(); }
     else if(e.target.id === 'fclr'){ Object.assign(F, { q:'', nature:'', type:'', minIV:0, minLv:0, perfect:0, shiny:false, form:false, hp:'', sort:'', dir:1, onlySel:false }); F.sp.clear(); F.ab.clear(); el.dataset.sig = ''; renderGrid(); }
   });
