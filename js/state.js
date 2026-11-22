@@ -8,6 +8,7 @@ import { calcMon } from './stats.js';
 
 export const mons = [];
 
+import { itemKey } from './mods.js';
 const DEFAULT_VIEW = { lvl100:false, stage:'current', mega:false, form:null, finalPick:null, megaPick:null, item:'', abil:'' };
 
 /* basit event bus */
@@ -138,7 +139,7 @@ export function addMon(mon){
 export function addMons(list){
   const have = new Set(mons.map(m => m.uid).filter(Boolean));
   const fresh = list.filter(m => !(m.uid && have.has(m.uid)));
-  fresh.forEach(m => { m.view = { ...DEFAULT_VIEW }; m.sel = false; mons.push(m); });
+  fresh.forEach(m => { m.view = { ...DEFAULT_VIEW, item: itemKey(m.item) }; m.sel = false; mons.push(m); });   // taşınan eşya tabloda varsa otomatik seçilir
   saveInventory();
   emit('grid');
   fresh.forEach(enqueueDataFetch);
@@ -208,6 +209,7 @@ export function resetEvs(m){ m.evs = { ...origEvs(m) }; return recalc(m); }
 export const exportMon = m => ({
   name:m.name, level:m.level, ability:m.ability, nature:m.nature,
   evs:m.evs, evs0:m.evs0, ivs:m.ivs, moves:m.moves, tera:m.tera ?? null, uid:m.uid ?? null, dex:m.dex ?? null, gform:m.gform ?? 0, shiny:!!m.shiny,
+  ...Object.fromEntries(['item', 'gender', 'nick', 'map'].filter(k => m[k]).map(k => [k, m[k]])),   // PC zarfından: yalnız doluysa saklanır
 });
 /* Paylaşılan listeye bağlıysa envanter o listenin kendi anahtarına yazılır; kişinin kendi envanteri LS_KEY'de bozulmadan kalır */
 const wsKey = () => { try{ const c = JSON.parse(localStorage.getItem('ivcalc.share.v1') || 'null')?.code; return c ? LS_KEY + ':' + c : LS_KEY; }catch(e){ return LS_KEY; } };

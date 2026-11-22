@@ -48,6 +48,8 @@ export const ABILITIES = {
 };
 const NK = s => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
 const abKey = name => Object.keys(ABILITIES).find(k => NK(k) === NK(name));
+/** oyundaki eşya adı → tablo anahtarı ('' = stat etkisi yok / bilinmiyor) */
+export const itemKey = name => Object.keys(ITEMS).find(k => NK(ITEMS[k].n) === NK(name)) ?? '';
 /** Pokémon'un kendi (seçilebilir) ability'lerinden stat etkisi olanlar: [{k, n}] */
 export const abilOptions = m => (m.eff?.ownAbilities ?? [m.ability]).map(abKey).filter(Boolean).map(k => ({ k, n: ABILITIES[k].n }));
 export const itemOptions = m => Object.entries(ITEMS).filter(([, d]) => (!d.sp || d.sp.includes(m.base?.species)) && (!d.evo || m.eff?.canEvo)).map(([k, d]) => ({ k, n: d.n }));
