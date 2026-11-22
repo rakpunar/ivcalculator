@@ -136,7 +136,7 @@ export async function resolveView(mon){
   return { id, label: id === own ? mon.name : G.label(id), isMega,
     base: { stats: G.stats(id), types: G.types(id), id, species: G.rootOf(id) },
     megaAbility: isMega ? (G.abilitiesOf(id)[0] ?? null) : null,
-    abilityOk: has(ownAbs), autoForm, hiddenAb: G.hiddenOf(form),
+    abilityOk: has(ownAbs), autoForm, hiddenAb: G.hiddenOf(form), canEvo: G.hasEvo(id),
     ownAbilities: ownAbs.map(prettyAb),
     opts: { forms: forms2, curForm: id, finals, megas, hasMega: megaSp != null, labels } };
 }

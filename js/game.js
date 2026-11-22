@@ -38,14 +38,15 @@ function build([dex, abil, evo, mega, moves, abDesc, fm]){
     hasEvo: id => !!evo[id]?.length,
     /** evrim zincirinin son halleri (kök hariç); start = alternatif formdan başlamak için (EvolveDb'de form id'leri de var) */
     finalsOf(root, start = root){
-      const out = [], seen = new Set([root, start]);
+      const out = [], mid = [], seen = new Set([root, start]);
       const walk = id => {
         const next = (evo[id] ?? []).map(e => e[0]).filter(n => !seen.has(n) && dex[n]);
         if(!next.length){ if(id !== root) out.push(id); return; }
+        if(id !== start) mid.push(id);   // ara evrim (ör. Charmeleon)
         next.forEach(n => { seen.add(n); walk(n); });
       };
       walk(start);
-      return [...new Set(out)];
+      return [...new Set([...out, ...mid])];   // son halleri önce: varsayılan seçim hep son hal
     },
     hiddenOf(id){ const h = abil[id]?.Ha; return h && h !== 'None' ? h : null; },
     abilitiesOf(id){ const a = abil[id]; return a ? [a.A1, a.A2, a.Ha].filter(x => x && x !== 'None') : []; },

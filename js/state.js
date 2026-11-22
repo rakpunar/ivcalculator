@@ -8,7 +8,7 @@ import { calcMon } from './stats.js';
 
 export const mons = [];
 
-const DEFAULT_VIEW = { lvl100:false, stage:'current', mega:false, form:null, finalPick:null, megaPick:null };
+const DEFAULT_VIEW = { lvl100:false, stage:'current', mega:false, form:null, finalPick:null, megaPick:null, item:'', abil:'' };
 
 /* basit event bus */
 const listeners = {};

@@ -7,6 +7,7 @@ import { t } from './i18n.js';
 import { confirmBox } from './dialog.js';
 import { mons, on, setView, bulkView, stageAvailable, megaAvailable, setSel, selectAll, refreshView, setEv, resetEvs, evTotal, evsChanged, EV_MAX, EV_TOTAL, relUids, protUids, evPlans } from './state.js';
 import { compileSearch } from './search.js';
+import { ITEMS, ABILITIES, itemOptions, abilOptions, modText } from './mods.js';
 
 const $  = sel => document.querySelector(sel);
 const grid = $('#grid');
@@ -70,6 +71,10 @@ function ctrlHTML(m, i){ // i: radyo grup adı eki (kart indeksi veya 'M' = moda
   if(st === 'final' && !v.mega && o.finals.length > 1) h += pick('pk-final', o.finals, v.finalPick ?? o.finals[0], o.labels);
   if(v.mega && o.megas.length > 1) h += pick('pk-mega', o.megas, v.megaPick ?? o.megas[0], o.labels);
   if(o.forms.length > 1) h += pick('pk-form', o.forms, o.curForm, o.labels);
+  if(i === 'M'){ // modal: stat çarpanı veren eşya / ability seçimi (son statlara yansır)
+    const mk = (cls, ttl, tbl, list, val) => `<select class="pick ${cls}" aria-label="${ttl}" title="${ttl}"><option value="">${ttl}: —</option>${list.map(x => `<option value="${x.k}"${x.k === val ? ' selected' : ''}>${esc(x.n)} (${esc(modText(tbl, x.k))})</option>`).join('')}</select>`;
+    h += mk('pk-item', 'Held item', ITEMS, itemOptions(m), v.item) + mk('pk-abil', 'Ability boost', ABILITIES, abilOptions(m), v.abil);
+  }
   return h;
 }
 
@@ -248,6 +253,8 @@ function handleCtrl(m, t){
   else if(t.classList.contains('pk-form'))  setView(m, { form: t.value });
   else if(t.classList.contains('pk-final')) setView(m, { finalPick: t.value });
   else if(t.classList.contains('pk-mega'))  setView(m, { megaPick: t.value });
+  else if(t.classList.contains('pk-item'))  setView(m, { item: t.value });
+  else if(t.classList.contains('pk-abil'))  setView(m, { abil: t.value });
 }
 
 function initToolbar(){

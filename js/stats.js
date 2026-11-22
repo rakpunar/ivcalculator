@@ -2,6 +2,7 @@
 import { KEYS, STATS } from './data.js';
 import { natureInfo } from './api.js';
 import { STAT_API_TO_KEY } from './data.js';
+import { modsFor } from './mods.js';
 
 /** Gösterilen seviye: 'Lv.100' seçiliyse ya da seviye yoksa 100, aksi halde Pokémon'un kendi seviyesi */
 export const effLevel = m => (m.view?.lvl100 || !m.level) ? 100 : m.level;
@@ -26,6 +27,8 @@ export async function calcMon(m){
       out[k] = Math.floor(inner * mod);
     }
   }
+  const mul = modsFor(m, out);   // seçili eşya / ability çarpanları
+  for(const k of KEYS) if(mul[k]) out[k] = Math.floor(out[k] * mul[k]);
   return out;
 }
 
