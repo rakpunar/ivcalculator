@@ -72,8 +72,8 @@ function ctrlHTML(m, i){ // i: radyo grup adı eki (kart indeksi veya 'M' = moda
   if(v.mega && o.megas.length > 1) h += pick('pk-mega', o.megas, v.megaPick ?? o.megas[0], o.labels);
   if(o.forms.length > 1) h += pick('pk-form', o.forms, o.curForm, o.labels);
   if(i === 'M'){ // modal: stat çarpanı veren eşya / ability seçimi (son statlara yansır)
-    const mk = (cls, ttl, tbl, list, val) => `<select class="pick ${cls}" aria-label="${ttl}" title="${ttl}"><option value="">${ttl}: —</option>${list.map(x => `<option value="${x.k}"${x.k === val ? ' selected' : ''}>${esc(x.n)} (${esc(modText(tbl, x.k))})</option>`).join('')}</select>`;
-    h += mk('pk-item', 'Held item', ITEMS, itemOptions(m), v.item) + mk('pk-abil', 'Ability boost', ABILITIES, abilOptions(m), v.abil);
+    const mk = (cls, ttl, tbl, list, val) => `<select class="pick ${cls}" aria-label="${ttl}" title="${ttl}"><option value="">${ttl}: —</option>${list.map(x => `<option value="${x.k}"${x.k === val ? ' selected' : ''}>${esc(x.n)}${modText(tbl, x.k) ? ` (${esc(modText(tbl, x.k))})` : ''}</option>`).join('')}</select>`;
+    h += mk('pk-item', 'Held item', ITEMS, itemOptions(m), v.item) + mk('pk-abil', 'Ability boost', ABILITIES, [{ k: 'none', n: 'None (ignore ability)' }, ...abilOptions(m)], v.abil);
   }
   return h;
 }
