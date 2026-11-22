@@ -40,6 +40,7 @@ const evDrafts = () => mons.filter(m => UID(m) && evsChanged(m));
 function syncRel(){
   const n = relIds().length, s = sel(), b = $('btnRel');
   b.disabled = !lastD || n < 1; b.textContent = `🗑 ${t('Release via bot')}${n ? ` (${n})` : ''}`;
+  $('btnPcf').disabled = !s.length;
   const un = s.filter(m => !protUids.has(m.uid)).length;
   $('btnProt').disabled = !lastD || !s.length; $('btnProt').textContent = !s.length || un ? `🛡 ${t('Protect')}` : `🛡 ${t('Unprotect')}`;
   const d = evDrafts().length; $('btnEv').disabled = !lastD || !d; $('btnEv').textContent = `📤 ${t('Send EV plan')}${d ? ` (${d})` : ''}`;
@@ -74,6 +75,13 @@ async function sendRelease(){
     showMessage({ type: 'ok', text: t("✔ Sent to the bot's release list: {n} new.", { n: r.received ?? 0 }) });
     pull('prot', true); pull('rel', true);
   }catch(e){ noticeBox(t('Release request failed: {err}', { err: e.message })); }
+}
+
+/** oyun PC arama kutusu filtresi: uid=1 | uid=2 … (OR); bot gerekmez */
+async function copyPcFilter(){
+  const f = sel().map(m => `uid=${m.uid}`).join(' | '); if(!f) return;
+  try{ await navigator.clipboard.writeText(f); showMessage({ type: 'ok', text: t('✔ PC filter copied ({n}): paste it into the in-game PC search box.', { n: f.split('|').length }) }); }
+  catch(e){ noticeBox(f); }
 }
 
 async function toggleProt(){
@@ -139,6 +147,7 @@ async function poll(){
 export function initBot(){
   $('btnBot').addEventListener('click', () => doImport('/pc', false));
   $('btnRel').addEventListener('click', sendRelease);
+  $('btnPcf').addEventListener('click', copyPcFilter);
   $('btnProt').addEventListener('click', toggleProt); $('btnEv').addEventListener('click', sendEv); $('btnEvDel').addEventListener('click', delEv);
   on('grid', syncRel);
   document.addEventListener('visibilitychange', () => { if(!document.hidden) poll(); });
