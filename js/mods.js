@@ -52,23 +52,23 @@ const abKey = name => Object.keys(ABILITIES).find(k => NK(k) === NK(name));
 /** oyundaki eşya adı → tablo anahtarı ('' = stat etkisi yok / bilinmiyor) */
 export const itemKey = name => Object.keys(ITEMS).find(k => NK(ITEMS[k].n) === NK(name)) ?? '';
 /** Pokémon'un kendi (seçilebilir) ability'lerinden stat etkisi olanlar: [{k, n}] */
-export const abilOptions = m => {   // simülasyon: tüm tablo; türün kendi ability'leri başta (★)
-  const own = new Set((m.eff?.ownAbilities ?? [m.ability]).map(abKey).filter(Boolean));
-  const o = k => ({ k, n: (own.has(k) ? '★ ' : '') + ABILITIES[k].n });
-  return [...own, ...Object.keys(ABILITIES).filter(k => !own.has(k))].map(o);
-};
+/** Pokémon'un kendi ability'si stat tablosundaysa anahtarı ('' = etkisi yok) */
+export const ownAb = m => abKey(m.abName ?? m.ability) ?? '';
 export const itemOptions = m => Object.entries(ITEMS).filter(([, d]) => (!d.sp || d.sp.includes(m.base?.species)) && (!d.evo || m.eff?.canEvo)).map(([k, d]) => ({ k, n: d.n }));
 const fmt = mul => Object.entries(mul ?? {}).map(([s, v]) => `${s} ×${+v.toFixed(2)}`).join(', ') || '';
 export const modText = (tbl, k) => (fmt(tbl[k]?.mul) || (tbl[k]?.high ? 'best stat ×1.3' : '')) + (tbl[k]?.c ? ` · if ${tbl[k].c}` : '');
 
+const stOf = { status: ['brn', 'tox'], poisoned: ['tox'], burned: ['brn'] };   // orbun verdiği durum ability koşulunu sağlar mı
+/** kendi ability'sinin etkisi uygulanıyor mu: onay kutusu VEYA koşulu orb durumu sağlıyor; uygulanıyorsa tablo kaydı */
+export const abActive = m => {
+  const own = ownAb(m), c = ABILITIES[own]?.c, st = ITEMS[m.view?.item]?.st;
+  return own && (m.view?.abil === 'on' || (c && st && stOf[c]?.includes(st))) ? ABILITIES[own] : null;
+};
+
 /** stat çarpanları {Atk:1.5,…}; out = nature sonrası stat değerleri (en yüksek stat kuralı için) */
 export function modsFor(m, out){
   const mul = {}, add = d => { if(d) for(const [s, v] of Object.entries(d.mul ?? {})) mul[s] = (mul[s] ?? 1) * v; };
-  // ability: '' = otomatik (kendi ability'si sabit etkiliyse uygulanır), 'none' = hiçbiri, aksi halde seçilen (koşullular "koşul aktif" sayılır)
-  const sel = m.view?.abil, own = abKey(m.abName ?? m.ability), it = ITEMS[m.view?.item];
-  const stOf = { status: ['brn', 'tox'], poisoned: ['tox'], burned: ['brn'] };   // eşyanın verdiği durum, ability koşulunu sağlar mı
-  const met = c => !c || (it?.st && stOf[c]?.includes(it.st));
-  const ab = sel === 'none' ? null : sel ? ABILITIES[sel] : (own && met(ABILITIES[own].c) ? ABILITIES[own] : null);
+  const it = ITEMS[m.view?.item], ab = abActive(m);
   if(it?.st === 'brn' && ab !== ABILITIES.guts) mul.Atk = (mul.Atk ?? 1) * 0.5;   // burn: fiziksel yarılama (Guts'ta yok)
   if(it && (!it.sp || it.sp.includes(m.base?.species)) && (!it.evo || m.eff?.canEvo)) add(it);
   add(ab);

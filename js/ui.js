@@ -7,7 +7,7 @@ import { t } from './i18n.js';
 import { confirmBox } from './dialog.js';
 import { mons, on, setView, bulkView, stageAvailable, megaAvailable, setSel, selectAll, refreshView, setEv, resetEvs, evTotal, evsChanged, EV_MAX, EV_TOTAL, relUids, protUids, evPlans } from './state.js';
 import { compileSearch } from './search.js';
-import { ITEMS, ABILITIES, itemOptions, abilOptions, modText } from './mods.js';
+import { ITEMS, ABILITIES, itemOptions, ownAb, abActive, modText } from './mods.js';
 
 const $  = sel => document.querySelector(sel);
 const grid = $('#grid');
@@ -73,7 +73,7 @@ function ctrlHTML(m, i){ // i: radyo grup adı eki (kart indeksi veya 'M' = moda
   if(o.forms.length > 1) h += pick('pk-form', o.forms, o.curForm, o.labels);
   if(i === 'M'){ // modal: stat çarpanı veren eşya / ability seçimi (son statlara yansır)
     const mk = (cls, ttl, tbl, list, val) => `<select class="pick ${cls}" aria-label="${ttl}" title="${ttl}"><option value="">${ttl}: —</option>${list.map(x => `<option value="${x.k}"${x.k === val ? ' selected' : ''}>${esc(x.n)}${modText(tbl, x.k) ? ` (${esc(modText(tbl, x.k))})` : ''}</option>`).join('')}</select>`;
-    h += mk('pk-item', 'Held item', ITEMS, itemOptions(m), v.item) + mk('pk-abil', 'Ability boost', ABILITIES, [{ k: 'none', n: 'None (ignore ability)' }, ...abilOptions(m)], v.abil);
+    h += mk('pk-item', 'Held item', ITEMS, itemOptions(m), v.item);
   }
   return h;
 }
@@ -254,7 +254,7 @@ function handleCtrl(m, t){
   else if(t.classList.contains('pk-final')) setView(m, { finalPick: t.value });
   else if(t.classList.contains('pk-mega'))  setView(m, { megaPick: t.value });
   else if(t.classList.contains('pk-item'))  setView(m, { item: t.value });
-  else if(t.classList.contains('pk-abil'))  setView(m, { abil: t.value });
+  else if(t.classList.contains('pk-abil'))  setView(m, { abil: t.checked ? 'on' : '' });
 }
 
 function initToolbar(){
@@ -368,7 +368,7 @@ function renderModal(m){
 
   // Alt orta blok: ability + nature adı/açıklaması (hamleler ve base statların altında, ortalanmış)
   root.querySelector('.fAbility').innerHTML =
-    `<b>Ability:</b> <span class="abl${m.abName === 'Unknown' ? ' ab-bad' : ''}">${esc(m.abName ?? m.ability)}</span> — ${m.abDesc != null ? esc(m.abDesc) : 'loading…'}`;
+    `<b>Ability:</b> <span class="abl${m.abName === 'Unknown' ? ' ab-bad' : ''}">${esc(m.abName ?? m.ability)}</span>${ownAb(m) ? ` <label class="abchk" title="${esc(modText(ABILITIES, ownAb(m)))}"><input type="checkbox" class="pk-abil"${abActive(m) ? ' checked' : ''}> ${esc(modText(ABILITIES, ownAb(m)))}</label>` : ''} — ${m.abDesc != null ? esc(m.abDesc) : 'loading…'}`;
   root.querySelector('.hpv').innerHTML = hpChip(m);
   fillId(root.querySelector('.fId'), m);
   root.querySelector('.fNature').innerHTML =
