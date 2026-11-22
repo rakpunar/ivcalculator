@@ -168,6 +168,11 @@ export function removeMon(index){
   return m;
 }
 
+/** botun salma koruma listesi (uid) ve EV taslakları (uid → {name,dex,target}); değişince kartlar yeniden çizilir */
+export const protUids = new Set(), evPlans = new Map();
+export function setProtList(uids){ protUids.clear(); uids.forEach(u => protUids.add(String(u))); emit('grid'); return protUids.size; }
+export function setEvPlans(o){ evPlans.clear(); Object.entries(o ?? {}).forEach(([u, p]) => evPlans.set(String(u), p)); emit('grid'); return evPlans.size; }
+
 /** botun salma listesi (uid'ler); değişince kartlar yeniden çizilir */
 export const relUids = new Set();
 export function setRelList(uids){

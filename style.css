@@ -416,3 +416,7 @@ html.tx *,html.tx *::before,html.tx *::after,html.tx dialog::backdrop{transition
 /* Botun salma listesindeki Pokémon */
 .card.inrel{outline:2px dashed var(--bad);outline-offset:-2px}
 .card.inrel::after{content:'🗑';position:absolute;top:6px;left:8px;font-size:1rem}
+
+.card.inprot::before{content:'🛡';position:absolute;top:4px;left:4px;z-index:2;font-size:.9rem}
+.card.inev{box-shadow:inset 0 0 0 2px var(--accent)}
+#dlg p{white-space:pre-line}

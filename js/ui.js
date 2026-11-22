@@ -5,7 +5,8 @@ import { PLACEHOLDER, cropSprite } from './sprites.js';
 import { calcMon, effLevel, hiddenPower, HP_TYPES } from './stats.js';
 import { t } from './i18n.js';
 import { confirmBox } from './dialog.js';
-import { mons, on, setView, bulkView, stageAvailable, megaAvailable, setSel, selectAll, refreshView, setEv, resetEvs, evTotal, evsChanged, EV_MAX, EV_TOTAL, relUids } from './state.js';
+import { mons, on, setView, bulkView, stageAvailable, megaAvailable, setSel, selectAll, refreshView, setEv, resetEvs, evTotal, evsChanged, EV_MAX, EV_TOTAL, relUids, protUids, evPlans } from './state.js';
+import { compileSearch } from './search.js';
 
 const $  = sel => document.querySelector(sel);
 const grid = $('#grid');
@@ -87,6 +88,7 @@ const isForm = m => +m.dex >= 3000 || +m.gform > 0 || (!!m.eff && !m.eff.isMega 
 const perfect = m => IVK.filter(k => STATS.get(m.ivs, k) >= 31).length;
 const SORTS = { name:m => (m.eff?.label ?? m.name).toLowerCase(), level:m => m.level ?? 0, nature:m => m.nature ?? '', iv:tv, perfect,
   ...Object.fromEntries(IVK.map(k => [k.toLowerCase(), m => STATS.get(m.ivs, k)])) };
+let qc = { q: '', f: null };   // derlenmiş arama (aynı sorgu için yeniden derlenmez)
 const passes = m => {
   if(F.nature && m.nature !== F.nature) return false;
   if(F.type && !(m.types ?? []).includes(F.type)) return false;
@@ -98,9 +100,7 @@ const passes = m => {
   if(F.sp.size && !F.sp.has(m.name)) return false;
   // seçili ability türün ability'leriyle hiç kesişmiyorsa o Pokémon için ability filtresi yokmuş gibi sayılır (tür seçiliyken)
   if(F.ab.size && (!F.sp.size || abilsOf(m).some(k => F.ab.has(k))) && !F.ab.has(nk(m.ability))) return false;
-  if(F.q){ const h = [m.name, m.eff?.label, m.nature, m.ability, m.abName, ...(m.moves ?? [])].join(' ').toLowerCase();
-    return F.q.split(/\s+/).every(t => h.includes(t)); }
-  return true;
+  return !F.q || (qc.q === F.q ? qc.f : (qc = { q: F.q, f: compileSearch(F.q) }).f)(m);
 };
 const visible = () => {
   const a = mons.map((m, i) => i).filter(i => passes(mons[i]));
@@ -138,7 +138,7 @@ function initFilter(){
   if(el.dataset.sig === sig) return; el.dataset.sig = sig;
   const num = (id, lbl, max, v) => `<label class="fld"><span>${lbl}</span><input id="${id}" class="inp" type="number" inputmode="numeric" min="0" max="${max}" placeholder="0" value="${v || ''}"></label>`;
   el.innerHTML = `<div class="f-row">
-      <input id="fq" class="inp f-search" type="search" placeholder="Search name, move, ability…" aria-label="Search" value="${esc(F.q)}">
+      <input id="fq" class="inp f-search" type="search" placeholder="Search: pika, timid, spa&gt;30, abil static…" title="Comma separated, all must match. Column prefix: pokemon, abil, nature, item, move, gender, ot, lv, atk, def, spa, spd, spe, hp, iv. Compare: spa&gt;30, lv&gt;=50" aria-label="Search" value="${esc(F.q)}">
       <select id="fsort" class="pick" aria-label="Sort by">${opt('', 'Sort: inventory order')}${[['name','Name'],['level','Level'],['nature','Nature'],['iv','IV total'],['perfect','Perfect IVs (31)'],...IVK.map(k => [k.toLowerCase(), k + ' IV'])].map(([v, t]) => opt(v, t)).join('')}</select>
       <button class="mini" id="fdir" title="Toggle ascending / descending"></button>
       <button class="mini" id="ftoggle" aria-expanded="false" aria-controls="filters">Filters</button>
@@ -199,6 +199,8 @@ export function renderGrid(){
     const node = $('#tpl-card').content.firstElementChild.cloneNode(true);
     node.dataset.i = i;
     node.classList.toggle('inrel', relUids.has(String(m.uid)));
+    node.classList.toggle('inprot', protUids.has(String(m.uid)));
+    node.classList.toggle('inev', evPlans.has(String(m.uid)));
     node.querySelector('.name').textContent = (m.eff?.label ?? m.name) + (m.loading ? ' ⏳' : '');
     node.querySelector('.lvl').textContent = t('Lv. {l} · {n} Nature', { l: m.view.lvl100 ? 100 : (m.level ?? '?'), n: m.nature });
     node.querySelector('.ability').textContent = m.abName ?? m.ability;

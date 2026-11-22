@@ -2,7 +2,7 @@
 import { parsePcExport, runImport } from './import.js';
 import { t } from './i18n.js';
 import { noticeBox, confirmBox } from './dialog.js';
-import { mons, on, relUids, setRelList } from './state.js';
+import { mons, on, relUids, setRelList, protUids, setProtList, evPlans, setEvPlans, evsChanged, EV_MAX } from './state.js';
 import { showMessage } from './ui.js';
 
 const PORTS = [47831, 47832, 47833, 47834, 47835];
@@ -32,30 +32,82 @@ function show(d){
   syncRel();
 }
 
-/* ---- salma listesi: seçilenleri botun listesine ekler (salmayı kullanıcı uygulamada yapar); liste relRev ile senkron ---- */
-const relIds = () => mons.filter(m => m.sel && /^\d+$/.test(m.uid ?? '') && !relUids.has(m.uid)).map(m => m.uid).slice(0, 2000);
-function syncRel(){ const n = relIds().length; const b = $('btnRel'); b.disabled = !lastD || n < 1; b.textContent = `🗑 ${t('Release via bot')}${n ? ` (${n})` : ''}`; }
+/* ---- salma / koruma / EV taslağı: bot listeleri rev ile senkron (ping'deki relRev, protRev, evRev) ---- */
+const UID = m => /^\d+$/.test(m.uid ?? '');
+const sel = () => mons.filter(m => m.sel && UID(m));
+const relIds = () => sel().filter(m => !relUids.has(m.uid)).map(m => m.uid).slice(0, 2000);
+const evDrafts = () => mons.filter(m => UID(m) && evsChanged(m));
+function syncRel(){
+  const n = relIds().length, s = sel(), b = $('btnRel');
+  b.disabled = !lastD || n < 1; b.textContent = `🗑 ${t('Release via bot')}${n ? ` (${n})` : ''}`;
+  const un = s.filter(m => !protUids.has(m.uid)).length;
+  $('btnProt').disabled = !lastD || !s.length; $('btnProt').textContent = !s.length || un ? `🛡 ${t('Protect')}` : `🛡 ${t('Unprotect')}`;
+  const d = evDrafts().length; $('btnEv').disabled = !lastD || !d; $('btnEv').textContent = `📤 ${t('Send EV plan')}${d ? ` (${d})` : ''}`;
+  const e = s.filter(m => evPlans.has(m.uid)).length; $('btnEvDel').disabled = !lastD || !e; $('btnEvDel').textContent = `✕ ${t('Remove EV plan')}${e ? ` (${e})` : ''}`;
+}
+
+// text/plain: preflight (OPTIONS) gerektirmez; gövde yine JSON
+const post = async (path, body) => (await fetch(url(path), { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(body), signal: AbortSignal.timeout(8000) })).json();
+const okOr = r => { if(!r?.ok) throw new Error('rejected'); return r; };
+
+const IVN = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe'], statLine = o => IVN.map(k => `${k} ${o?.[k] ?? 0}`).join(' / ');
+/** korumalı Pokémon onay kutusu metni (ProBot önizlemesiyle aynı alanlar) */
+function preview(m){
+  const g = String(m.gender ?? '').toUpperCase(), iv = IVN.reduce((a, k) => a + (+m.ivs?.[k] || 0), 0), ev = IVN.reduce((a, k) => a + (+m.evs?.[k] || 0), 0);
+  return [`${m.shiny ? '★ ' : ''}${m.name}${g === 'M' ? ' ♂' : g === 'F' ? ' ♀' : ''}  Lv ${m.level ?? '?'}`, `${t('Nature')}: ${m.nature}`, `IV (${iv}): ${statLine(m.ivs)}`, `EV (${ev}): ${statLine(m.evs)}`,
+    `${t('Ability')}: ${m.ability}`, m.item && m.item !== '0' ? `${t('Item')}: ${m.item}` : '', m.map ? `${t('Map')}: ${m.map}` : ''].filter(Boolean).join('\n');
+}
 
 async function sendRelease(){
-  const uids = relIds(); if(!uids.length) return;
-  if(!(await confirmBox(t("Add {n} Pokémon to the bot's release list? You decide in the app when to release them.", { n: uids.length }), { ok: 'Add to list', danger: true }))) return;
+  const all = relIds(); if(!all.length) return;
+  const prot = all.filter(u => protUids.has(u)), plain = all.filter(u => !protUids.has(u));
+  if(plain.length && !(await confirmBox(t("Add {n} Pokémon to the bot's release list? You decide in the app when to release them.", { n: plain.length }), { ok: 'Add to list', danger: true }))) return;
+  const ok = [];
+  for(const u of prot){   // korumalı her Pokémon için ayrı onay
+    const m = mons.find(x => x.uid === u);
+    if(await confirmBox(`${t('Protected Pokémon! Remove protection and add to the release list?')}\n\n${preview(m)}`, { ok: 'Unprotect and add', danger: true })) ok.push(u);
+  }
+  const uids = [...plain, ...ok]; if(!uids.length) return;
   try{
-    // text/plain: preflight (OPTIONS) gerektirmez; gövde yine JSON
-    const r = await (await fetch(url('/release'), { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ uids }), signal: AbortSignal.timeout(8000) })).json();
-    if(!r?.ok) throw new Error('rejected');
+    if(ok.length) okOr(await post('/protect/remove', { uids: ok }));
+    const r = okOr(await post('/release', { uids }));
     showMessage({ type: 'ok', text: t("✔ Sent to the bot's release list: {n} new.", { n: r.received ?? 0 }) });
-    relPull(true);
+    pull('prot', true); pull('rel', true);
   }catch(e){ noticeBox(t('Release request failed: {err}', { err: e.message })); }
 }
 
-/** Botun salma listesini çeker (GET /rellist), kartlardaki 🗑 işaretini günceller; ilk eşitlemede yalnız doluysa bildirir */
-let relRev, relSynced = false;
-async function relPull(quiet){
-  const r = await get('/rellist', 4000).catch(() => null);
-  if(!r || !Array.isArray(r.uids)) return;
-  const first = !relSynced; relSynced = true; relRev = r.rev;
-  const n = setRelList(r.uids);
-  if(!quiet && (!first || n)) showMessage({ type: 'ok', text: t('Release list updated: {n} Pokémon', { n }) });
+async function toggleProt(){
+  const s = sel(); if(!s.length) return;
+  const add = s.filter(m => !protUids.has(m.uid)), rm = !add.length;
+  try{ okOr(await post(rm ? '/protect/remove' : '/protect', { uids: (rm ? s : add).map(m => m.uid) })); pull('prot', true); }
+  catch(e){ noticeBox(t('Bot request failed: {err}', { err: e.message })); }
+}
+
+const KEY = { HP: 'hp', Atk: 'atk', Def: 'def', SpA: 'spa', SpD: 'spd', Spe: 'spe' };
+async function sendEv(){
+  const plans = evDrafts().map(m => ({ uid: m.uid, name: m.name, dex: m.dex ?? null, target: Object.fromEntries(IVN.map(k => [KEY[k], Math.min(EV_MAX, +m.evs?.[k] || 0)])) }));
+  if(!plans.length) return;
+  try{ okOr(await post('/evplan', { plans })); showMessage({ type: 'ok', text: t('✔ EV plans sent to the bot: {n}.', { n: plans.length }) }); pull('ev', true); }
+  catch(e){ noticeBox(t('Bot request failed: {err}', { err: e.message })); }
+}
+async function delEv(){
+  const uids = sel().filter(m => evPlans.has(m.uid)).map(m => m.uid); if(!uids.length) return;
+  try{ okOr(await post('/evplan/remove', { uids })); pull('ev', true); }
+  catch(e){ noticeBox(t('Bot request failed: {err}', { err: e.message })); }
+}
+
+/** Bot listelerini çeker; ilk eşitlemede yalnız doluysa bildirir. rel/prot: {rev,uids}, ev: {rev,plans} */
+const L = {
+  rel:  { path: '/rellist', ping: 'relRev', rev: undefined, synced: false, apply: r => setRelList(r.uids), ok: r => Array.isArray(r.uids), msg: 'Release list updated: {n} Pokémon' },
+  prot: { path: '/protect', ping: 'protRev', rev: undefined, synced: false, apply: r => setProtList(r.uids), ok: r => Array.isArray(r.uids), msg: 'Protection list updated: {n} Pokémon' },
+  ev:   { path: '/evplan', ping: 'evRev', rev: undefined, synced: false, apply: r => setEvPlans(r.plans), ok: r => r.plans && typeof r.plans === 'object', msg: 'EV plans updated: {n} Pokémon' },
+};
+async function pull(k, quiet){
+  const l = L[k], r = await get(l.path, 4000).catch(() => null);
+  if(!r || !l.ok(r)) return;
+  const first = !l.synced; l.synced = true; l.rev = r.rev;
+  const n = l.apply(r);
+  if(!quiet && (!first || n)) showMessage({ type: 'ok', text: t(l.msg, { n }) });
 }
 
 /** Zarfı içe aktarır; bitince (kullanıcı OK'layınca) döner. ack=true: bot'a "tamam" bildirir. */
@@ -79,8 +131,7 @@ async function poll(){
   if(!document.hidden && !busy){
     const d = await ping(); show(d);
     if(d?.pending > 0 && Date.now() > cooldownUntil) await doImport('/outbox', true);
-    if(d && (!relSynced || (d.relRev !== undefined && d.relRev !== relRev))) await relPull();
-    if(!d) relSynced = false;   // bot kapandı: tekrar bağlanınca tam eşitleme
+    for(const k in L){ const l = L[k]; if(d && (!l.synced || (d[l.ping] !== undefined && d[l.ping] !== l.rev))) await pull(k); if(!d) l.synced = false; }   // bot kapandı: tekrar bağlanınca tam eşitleme
   }
   timer = setTimeout(poll, port ? 3000 : 10000);
 }
@@ -88,6 +139,7 @@ async function poll(){
 export function initBot(){
   $('btnBot').addEventListener('click', () => doImport('/pc', false));
   $('btnRel').addEventListener('click', sendRelease);
+  $('btnProt').addEventListener('click', toggleProt); $('btnEv').addEventListener('click', sendEv); $('btnEvDel').addEventListener('click', delEv);
   on('grid', syncRel);
   document.addEventListener('visibilitychange', () => { if(!document.hidden) poll(); });
   addEventListener('langchange', () => show(lastD));
