@@ -6,6 +6,7 @@ import { calcMon, effLevel, hiddenPower, HP_TYPES } from './stats.js';
 import { t } from './i18n.js';
 import { confirmBox } from './dialog.js';
 import { mons, on, setView, bulkView, stageAvailable, megaAvailable, setSel, selectAll, refreshView, setEv, resetEvs, evTotal, evsChanged, EV_MAX, EV_TOTAL, relUids, protUids, evPlans } from './state.js';
+import { game } from './game.js';
 import { compileSearch } from './search.js';
 import { ITEMS, ABILITIES, itemOptions, ownAb, abActive, modText } from './mods.js';
 
@@ -41,6 +42,17 @@ export function setImg(img, cands, hold){
   const next = () => { if(i >= list.length){ img.onerror = null; if(!img.src) img.src = PLACEHOLDER; return; }
     imgSrc(list[i++]).then(cropSprite).then(src => { shown.set(key, src); if(hold) hold._src = src; img.src = src; }).catch(next); };
   img._go = next; io.observe(img); // görünür olunca yükle
+}
+
+/** sprite tıklanınca türün pokemondb sayfası (tür adı = ulusal dex kökü; formlar sayfa içinde) */
+function dbLink(img, m){
+  img.style.cursor = 'pointer'; img.title = t('Open on pokemondb.net');
+  img.addEventListener('click', async e => {
+    e.stopPropagation();
+    const sp = m.eff?.base?.species; if(sp == null) return;
+    const slug = (await game()).label(sp).replace(/♀/g, '-f').replace(/♂/g, '-m').normalize('NFD').replace(/[̀-ͯ'’.:]/g, '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    open('https://pokemondb.net/pokedex/' + slug, '_blank', 'noopener');
+  });
 }
 
 function colorForValue(v, sorted){
@@ -211,7 +223,7 @@ export function renderGrid(){
     node.querySelector('.ctrl').innerHTML = ctrlHTML(m, i);
     node.classList.toggle('picked', !!m.sel);
     node.querySelector('.sel input').checked = !!m.sel;
-    setImg(node.querySelector('img'), m.imgs, m);
+    setImg(node.querySelector('img'), m.imgs, m); dbLink(node.querySelector('img'), m);
     node.querySelector('.del').addEventListener('click', e => { e.stopPropagation(); removeMonRef(i); });
     node.querySelector('.lvl').addEventListener('mouseenter', e => showNatureTip(e, m));
     node.querySelector('.lvl').addEventListener('mouseleave', hideTip);
@@ -339,7 +351,7 @@ function renderModal(m){
   root.querySelector('.thlv').textContent = `Lv.${effLevel(m)}`;
   root.querySelector('.m-ctrl').innerHTML = ctrlHTML(m, 'M');
   root.querySelector('.lvl-extra').textContent = m.tera ? 'Tera: ' + m.tera : '';
-  setImg(root.querySelector('img'), m.imgs, m);
+  setImg(root.querySelector('img'), m.imgs, m); dbLink(root.querySelector('img'), m);
   root.querySelector('.tv').textContent = tv(m);
   root.querySelector('.tvsum').textContent = tv(m);
   root.querySelector('.tvbar').style.width = (tv(m)/186*100).toFixed(1) + '%';
