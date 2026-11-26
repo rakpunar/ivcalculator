@@ -3,7 +3,7 @@ import { game } from './game.js';
 import { KEYS, STAT_ORDER, STAT_COLORS, NATURES } from './data.js';
 import { natureInfo } from './api.js';
 import { calcMon } from './stats.js';
-import { spriteList, PLACEHOLDER } from './sprites.js';
+import { spriteList, PLACEHOLDER, cropSprite } from './sprites.js';
 import { ITEMS, ABILITIES, itemOptions, ownAb, abActive, modText } from './mods.js';
 
 const $ = id => document.getElementById(id);
@@ -77,9 +77,10 @@ async function pick(id){
   update();
   const me = ++sprRun, list = await spriteList({ dex: id, view: { stage: 'current' } }, id);
   if(me !== sprRun) return;
-  const img = $('sprite'); let i = 0;
-  img.onerror = () => { if(i >= list.length) img.onerror = null; img.src = list[i++] ?? PLACEHOLDER; };
-  img.onerror();
+  for(const src of list){   // saydam kenarlar kırpılır: sprite kutuyu doldurur
+    try{ const c = await cropSprite(src); if(me === sprRun) $('sprite').src = c; return; }catch(e){}
+  }
+  $('sprite').src = PLACEHOLDER;
 }
 
 $('mon').addEventListener('focus', () => { $('mon').value = ''; });   // dolu kutuda datalist yalnız eşleşeni gösterir

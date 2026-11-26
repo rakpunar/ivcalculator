@@ -15,7 +15,9 @@
 .row{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
 .row label{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 #mon{width:280px}
-#sprite{width:128px;height:128px;object-fit:contain;image-rendering:pixelated}
+.hero,.hero .row{flex-direction:row;justify-content:center}
+.hero{flex-direction:column}
+#sprite{width:min(280px,100%);height:280px;object-fit:contain;image-rendering:pixelated}
 .tblwrap{overflow-x:auto;margin-top:10px}
 .calc table{width:100%;border-collapse:collapse;white-space:nowrap}
 .calc th,.calc td{padding:6px 5px;text-align:center;border-bottom:1px solid var(--hair)}
@@ -27,9 +29,9 @@
 </head>
 <body>
 <main class="calc">
-  <div class="panel row">
+  <div class="panel row hero">
     <img id="sprite" alt="">
-    <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;min-width:0">
       <label>Pokémon <input id="mon" list="monList" autocomplete="off" placeholder="Ad veya numara yaz…"></label>
       <datalist id="monList"></datalist>
       <div class="row" id="types"></div>
