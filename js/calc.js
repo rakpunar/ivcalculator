@@ -8,7 +8,9 @@ import { ITEMS, ABILITIES, itemOptions, ownAb, abActive, modText, stageOf } from
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
-const MAX = { iv: 31, ev: 252 };
+const MAX = { iv: 31, ev: 252 }, EV_TOTAL = 510;
+/** toplam 510'u aşan EV'ler sırayla kırpılır */
+const capEV = ev => { let left = EV_TOTAL; for(const k of KEYS){ ev[k] = Math.min(ev[k], left); left -= ev[k]; } return ev; };
 const S = { id: null, abOn: false, iv: Object.fromEntries(KEYS.map(k => [k, 31])), ev: Object.fromEntries(KEYS.map(k => [k, 0])), stage: {} };
 const G = await game();
 
@@ -26,7 +28,7 @@ $('nature').innerHTML = (await Promise.all([...NATURES].sort().map(async n => {
 }))).join('');
 
 /* stat satırları bir kez çizilir (girişlerde odak kaybolmasın) */
-const num = (t, k, label) => `<button class="mini" data-step="-1" aria-label="${label} ${t} azalt">▼</button> <input type="number" min="0" max="${MAX[t]}" step="${t === 'ev' ? 4 : 1}" data-t="${t}" data-k="${k}" value="${S[t][k]}" aria-label="${label} ${t.toUpperCase()}"> <button class="mini" data-step="1" aria-label="${label} ${t} artır">▲</button> <button class="mini" data-max title="${MAX[t]}">Max</button>`;
+const num = (t, k, label) => `<input type="number" min="0" max="${MAX[t]}" step="1" data-t="${t}" data-k="${k}" value="${S[t][k]}" aria-label="${label} ${t.toUpperCase()}"> <button class="mini" data-max title="${MAX[t]}">Max</button>`;
 const stageBtn = (k, d) => `<button class="bf${d < 0 ? ' neg' : ''}" data-stage="${k}" data-d="${d}">${d > 0 ? '+' : '−'}${Math.abs(d)}</button>`;
 $('stats').innerHTML = STAT_ORDER.map(({ key: k, label }) => `<tr><td style="color:${STAT_COLORS[k]}">${label} <span id="nat-${k}"></span></td>
   <td id="base-${k}"></td><td>${num('iv', k, label)}</td><td>${num('ev', k, label)}</td>
@@ -61,7 +63,7 @@ async function update(){
     if(k !== 'HP') $('sg-' + k).textContent = n > 0 ? '+' + n : n;
   }
   const tot = KEYS.reduce((a, k) => a + S.ev[k], 0);
-  $('evTotal').innerHTML = `EV toplamı <b class="${tot > 510 ? 'down' : ''}">${tot}</b> / 510${tot > 510 ? ' (oyunda mümkün değil)' : ''}`;
+  $('evTotal').innerHTML = `EV toplamı <b>${tot}</b> / ${EV_TOTAL} <small>(kalan ${EV_TOTAL - tot})</small>`;
 }
 
 let sprRun = 0;
@@ -111,10 +113,13 @@ inp.addEventListener('keydown', e => {
 box.addEventListener('mousedown', e => e.preventDefault());   // kaydırma/tıklama kutunun odağını düşürmesin
 box.addEventListener('click', e => choose(e.target.closest('[data-id]')));
 
-const set = (t, k, v) => S[t][k] = Math.max(0, Math.min(MAX[t], Math.floor(+v) || 0));
+const set = (t, k, v) => {
+  const room = t === 'ev' ? EV_TOTAL - KEYS.reduce((a, x) => a + (x === k ? 0 : S.ev[x]), 0) : MAX[t];
+  return S[t][k] = Math.max(0, Math.min(MAX[t], room, Math.floor(+v) || 0));
+};
 document.addEventListener('input', e => {
   const d = e.target.dataset;
-  if(d.t) set(d.t, d.k, e.target.value);
+  if(d.t){ const v = set(d.t, d.k, e.target.value); if(e.target.value !== '' && +e.target.value !== v) e.target.value = v; }   // sınır aşılırsa kutu hemen düzelir
   if(d.t || e.target.id === 'level') update();
 });
 document.addEventListener('change', e => {
@@ -130,10 +135,9 @@ document.addEventListener('click', e => {
   const b = e.target.closest('button'); if(!b) return;
   const d = b.dataset;
   if(d.all) document.querySelectorAll(`input[data-t="${d.all}"]`).forEach(i => { i.value = set(d.all, i.dataset.k, d.v); });
-  else if(d.step || 'max' in d){
+  else if('max' in d){
     const i = b.parentElement.querySelector(`input`);
-    if(d.step) i[+d.step > 0 ? 'stepUp' : 'stepDown'](); else i.value = i.max;
-    i.value = set(i.dataset.t, i.dataset.k, i.value);
+    i.value = set(i.dataset.t, i.dataset.k, i.max);   // EV'de kalan hak kadar
   }else if(d.stage){
     for(const k of d.stage === 'all' ? KEYS.filter(k => k !== 'HP') : [d.stage]) S.stage[k] = +d.d ? Math.max(-6, Math.min(6, (S.stage[k] || 0) + +d.d)) : 0;
   }
@@ -149,7 +153,7 @@ const clean = r => r && G.dex[r.id] && +r.id > 0 && typeof r.name === 'string' &
   name: r.name.trim().slice(0, 80), id: +r.id, level: int(r.level, 1, 100, 100),
   nature: NATURES.includes(r.nature) ? r.nature : 'Hardy', ability: String(r.ability ?? ''), abOn: !!r.abOn,
   item: Object.hasOwn(ITEMS, r.item) ? r.item : '', itOn: !!r.itOn,
-  iv: stats(r.iv, 0, MAX.iv), ev: stats(r.ev, 0, MAX.ev), stage: stats(r.stage, -6, 6),
+  iv: stats(r.iv, 0, MAX.iv), ev: capEV(stats(r.ev, 0, MAX.ev)), stage: stats(r.stage, -6, 6),
 } : null;
 const say = t => $('saveMsg').textContent = t;
 let saves = [], raw = null;

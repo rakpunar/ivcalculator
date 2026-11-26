@@ -26,7 +26,8 @@
 .calc table{width:100%;border-collapse:collapse;white-space:nowrap}
 .calc th,.calc td{padding:6px 5px;text-align:center;border-bottom:1px solid var(--hair)}
 .calc td:first-child{text-align:left;font-weight:700}
-.calc td input{width:64px;text-align:center}
+.calc td input{width:64px;text-align:center;-moz-appearance:textfield;appearance:textfield}
+.calc td input::-webkit-inner-spin-button,.calc td input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .calc .final{font-size:1.25rem;font-weight:700}
 #saves{list-style:none}
 #saves li{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--hair)}
@@ -56,7 +57,7 @@
   <div class="panel">
     <div class="row">
       <button class="mini" data-all="iv" data-v="31">IV hepsi 31</button><button class="mini" data-all="iv" data-v="0">IV sıfırla</button>
-      <button class="mini" data-all="ev" data-v="252">EV hepsi 252</button><button class="mini" data-all="ev" data-v="0">EV sıfırla</button>
+      <button class="mini" data-all="ev" data-v="85">EV eşit dağıt (85)</button><button class="mini" data-all="ev" data-v="0">EV sıfırla</button>
       <span id="evTotal"></span>
     </div>
     <div class="tblwrap"><table>
