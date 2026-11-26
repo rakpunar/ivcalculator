@@ -17,7 +17,9 @@ export async function calcMon(m){
   for(const k of KEYS){
     const base = m.base.stats[k];
     const iv = STATS.get(m.ivs,k), ev = STATS.get(m.evs,k), L = effLevel(m);
-    if(k === 'HP'){
+    if(k === 'HP' && base === 1){
+      out[k] = 1;   // Shedinja
+    } else if(k === 'HP'){
       out[k] = Math.floor((2*base + iv + Math.floor(ev/4)) * L/100) + L + 10;
     } else {
       const inner = Math.floor((2*base + iv + Math.floor(ev/4)) * L/100) + 5;

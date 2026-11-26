@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stat Hesaplayıcı</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<script>try{var t=localStorage.getItem("ivcalc.theme");document.documentElement.dataset.theme=t||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark")}catch(e){document.documentElement.dataset.theme="dark"}</script>
+<link rel="stylesheet" href="style.css">
+<style>
+.calc [hidden]{display:none!important}
+.calc{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.calc input:not([type=checkbox]),.calc select{background:var(--field);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:7px 9px;font:inherit;font-size:.9rem;max-width:100%}
+.calc button.mini{padding:5px 8px}
+.row{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.row label{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+#mon{width:280px}
+#sprite{width:128px;height:128px;object-fit:contain;image-rendering:pixelated}
+.tblwrap{overflow-x:auto;margin-top:10px}
+.calc table{width:100%;border-collapse:collapse;white-space:nowrap}
+.calc th,.calc td{padding:6px 5px;text-align:center;border-bottom:1px solid var(--hair)}
+.calc td:first-child{text-align:left;font-weight:700}
+.calc td input{width:64px;text-align:center}
+.calc .final{font-size:1.25rem;font-weight:700}
+.up{color:var(--good)}.down{color:var(--bad)}
+</style>
+</head>
+<body>
+<main class="calc">
+  <div class="panel row">
+    <img id="sprite" alt="">
+    <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+      <label>Pokémon <input id="mon" list="monList" autocomplete="off" placeholder="Ad veya numara yaz…"></label>
+      <datalist id="monList"></datalist>
+      <div class="row" id="types"></div>
+      <div class="row">
+        <label>Seviye <input id="level" type="number" min="1" max="100" value="100" style="width:76px"></label>
+        <label>Nature <select id="nature"></select></label>
+      </div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="row"><label>Ability <select id="ability"></select></label><label id="abOnL"><input type="checkbox" id="abOn"> <span id="abTxt"></span></label></div>
+    <p class="shothint" id="abDesc"></p>
+    <div class="row" style="margin-top:10px"><label>Eşya <select id="item"></select></label><label id="itOnL"><input type="checkbox" id="itOn"> <span id="itTxt"></span></label></div>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <button class="mini" data-all="iv" data-v="31">IV hepsi 31</button><button class="mini" data-all="iv" data-v="0">IV sıfırla</button>
+      <button class="mini" data-all="ev" data-v="252">EV hepsi 252</button><button class="mini" data-all="ev" data-v="0">EV sıfırla</button>
+      <span id="evTotal"></span>
+    </div>
+    <div class="tblwrap"><table>
+      <thead><tr><th></th><th>Base</th><th>IV</th><th>EV</th><th>Kademe (−6…+6)</th><th>Sonuç</th></tr></thead>
+      <tbody id="stats"></tbody>
+    </table></div>
+    <div class="row" style="margin-top:10px"><b>Tüm kademeler:</b> <span id="allStage"></span></div>
+  </div>
+</main>
+<script type="module" src="js/calc.js"></script>
+</body>
+</html>
