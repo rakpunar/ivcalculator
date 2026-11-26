@@ -15,6 +15,10 @@
 .row{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
 .row label{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 #mon{width:280px}
+.combo{position:relative}
+#monList{position:absolute;z-index:5;top:100%;right:0;width:280px;max-width:100%;max-height:320px;overflow-y:auto;background:var(--field);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow)}
+#monList div{padding:6px 10px;cursor:pointer;text-align:left}
+#monList div:hover,#monList div.cur{background:var(--panel2)}
 .hero,.hero .row{flex-direction:row;justify-content:center}
 .hero{flex-direction:column}
 #sprite{width:min(280px,100%);height:280px;object-fit:contain;image-rendering:pixelated}
@@ -24,6 +28,9 @@
 .calc td:first-child{text-align:left;font-weight:700}
 .calc td input{width:64px;text-align:center}
 .calc .final{font-size:1.25rem;font-weight:700}
+#saves{list-style:none}
+#saves li{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--hair)}
+#saves li span{flex:1;min-width:0;overflow-wrap:anywhere}
 .up{color:var(--good)}.down{color:var(--bad)}
 </style>
 </head>
@@ -32,8 +39,8 @@
   <div class="panel row hero">
     <img id="sprite" alt="">
     <div style="display:flex;flex-direction:column;align-items:center;gap:10px;min-width:0">
-      <label>Pokémon <input id="mon" list="monList" autocomplete="off" placeholder="Ad veya numara yaz…"></label>
-      <datalist id="monList"></datalist>
+      <div class="combo"><label>Pokémon <input id="mon" autocomplete="off" placeholder="Ad veya numara yaz…" role="combobox" aria-controls="monList" aria-expanded="false"></label>
+      <div id="monList" role="listbox" hidden></div></div>
       <div class="row" id="types"></div>
       <div class="row">
         <label>Seviye <input id="level" type="number" min="1" max="100" value="100" style="width:76px"></label>
@@ -57,6 +64,12 @@
       <tbody id="stats"></tbody>
     </table></div>
     <div class="row" style="margin-top:10px"><b>Tüm kademeler:</b> <span id="allStage"></span></div>
+  </div>
+  <div class="panel">
+    <div class="row"><input id="saveName" maxlength="80" placeholder="Kayıt adı (boşsa Pokémon adı)" aria-label="Kayıt adı" style="width:260px"><button class="mini" id="save">💾 Kaydet</button>
+      <button class="mini" id="export">⬇ JSON yedeği indir</button><button class="mini" id="import">⬆ JSON'dan yükle</button><input type="file" id="importFile" accept=".json,application/json" hidden></div>
+    <p class="shothint" id="saveMsg" role="status"></p>
+    <ul id="saves"></ul>
   </div>
 </main>
 <script type="module" src="js/calc.js"></script>

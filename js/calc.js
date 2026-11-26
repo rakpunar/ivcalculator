@@ -18,7 +18,6 @@ for(const id of Object.keys(G.dex).map(Number).filter(id => id > 0)){
   let l = G.label(id); if(byLabel.has(l.toLowerCase())) l += ` #${id}`;
   byLabel.set(l.toLowerCase(), id); labelOf[id] = l;
 }
-$('monList').innerHTML = [...byLabel.values()].map(id => `<option value="${esc(labelOf[id])}">#${G.rootOf(id)}</option>`).join('');
 
 const short = { attack: 'Atk', defense: 'Def', 'special-attack': 'SpA', 'special-defense': 'SpD', speed: 'Spe' };
 $('nature').innerHTML = (await Promise.all([...NATURES].sort().map(async n => {
@@ -83,13 +82,34 @@ async function pick(id){
   $('sprite').src = PLACEHOLDER;
 }
 
-$('mon').addEventListener('focus', () => { $('mon').value = ''; });   // dolu kutuda datalist yalnız eşleşeni gösterir
-$('mon').addEventListener('blur', () => { $('mon').value = labelOf[S.id]; });
-$('mon').addEventListener('input', e => {
-  const id = byLabel.get(e.target.value.trim().toLowerCase());
-  if(id){ pick(id); e.target.blur(); }
+/* kendi açılır listesi: datalist ilk tıklamada güvenilir açılmıyor */
+const box = $('monList'), inp = $('mon');
+let cur = 0;
+const mark = i => {
+  box.children[cur]?.classList.remove('cur');
+  cur = Math.max(0, Math.min(box.children.length - 1, i));
+  box.children[cur]?.classList.add('cur'); box.children[cur]?.scrollIntoView({ block: 'nearest' });
+};
+function showList(){
+  const q = inp.value.trim().toLowerCase();
+  const ids = [...byLabel.values()].filter(id => /^\d+$/.test(q) ? G.rootOf(id) === +q || id === +q : labelOf[id].toLowerCase().includes(q));
+  ids.sort((a, b) => !labelOf[a].toLowerCase().startsWith(q) - !labelOf[b].toLowerCase().startsWith(q));
+  box.innerHTML = ids.map(id => `<div role="option" data-id="${id}">${esc(labelOf[id])} <small>#${G.rootOf(id)}</small></div>`).join('');
+  box.hidden = false; inp.setAttribute('aria-expanded', 'true'); cur = 0; mark(0);
+}
+const hideList = () => { box.hidden = true; inp.setAttribute('aria-expanded', 'false'); };
+const choose = el => { if(el){ pick(+el.dataset.id); inp.blur(); } };
+inp.addEventListener('focus', () => { inp.value = ''; showList(); });
+inp.addEventListener('click', () => { if(box.hidden) showList(); });
+inp.addEventListener('input', showList);
+inp.addEventListener('blur', () => { hideList(); inp.value = labelOf[S.id]; });
+inp.addEventListener('keydown', e => {
+  if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); mark(cur + (e.key === 'ArrowDown' ? 1 : -1)); }
+  else if(e.key === 'Enter') choose(box.children[cur]);
+  else if(e.key === 'Escape') inp.blur();
 });
-$('mon').addEventListener('change', e => { const id = +e.target.value; if(id > 0 && G.dex[id]){ pick(id); e.target.blur(); } });   // numara
+box.addEventListener('mousedown', e => e.preventDefault());   // kaydırma/tıklama kutunun odağını düşürmesin
+box.addEventListener('click', e => choose(e.target.closest('[data-id]')));
 
 const set = (t, k, v) => S[t][k] = Math.max(0, Math.min(MAX[t], Math.floor(+v) || 0));
 document.addEventListener('input', e => {
@@ -120,4 +140,72 @@ document.addEventListener('click', e => {
   update();
 });
 
+/* ---------- kayıtlar: bu tarayıcıda (localStorage) + JSON yedek ---------- */
+const KEY = 'ivcalc.calc.saves.v1';
+const int = (v, lo, hi, d) => Number.isFinite(+v) ? Math.max(lo, Math.min(hi, Math.floor(+v))) : d;
+const stats = (o, lo, hi) => Object.fromEntries(KEYS.map(k => [k, int(o?.[k], lo, hi, 0)]));
+/** depodan/dosyadan gelen kayıt doğrulanır; geçersizse null */
+const clean = r => r && G.dex[r.id] && +r.id > 0 && typeof r.name === 'string' && r.name.trim() ? {
+  name: r.name.trim().slice(0, 80), id: +r.id, level: int(r.level, 1, 100, 100),
+  nature: NATURES.includes(r.nature) ? r.nature : 'Hardy', ability: String(r.ability ?? ''), abOn: !!r.abOn,
+  item: Object.hasOwn(ITEMS, r.item) ? r.item : '', itOn: !!r.itOn,
+  iv: stats(r.iv, 0, MAX.iv), ev: stats(r.ev, 0, MAX.ev), stage: stats(r.stage, -6, 6),
+} : null;
+const say = t => $('saveMsg').textContent = t;
+let saves = [], raw = null;
+try{ raw = localStorage.getItem(KEY); saves = JSON.parse(raw ?? '[]').map(clean).filter(Boolean); }
+catch(e){ try{ if(raw) localStorage.setItem(KEY + '.bozuk', raw); }catch(_){} say('Eski kayıtlar okunamadı.'); }
+function persist(){
+  try{ localStorage.setItem(KEY, JSON.stringify(saves)); return true; }
+  catch(e){ say('Tarayıcıya yazılamadı; JSON yedeği indir.'); return false; }
+}
+function drawSaves(){
+  $('saves').innerHTML = saves.map((r, i) => `<li><span><b>${esc(r.name)}</b> <small>${esc(labelOf[r.id])} · Lv.${r.level} · ${r.nature}</small></span><button class="mini" data-load="${i}">Aç</button><button class="mini" data-del="${i}" aria-label="Sil">✕</button></li>`).join('');
+}
+$('save').addEventListener('click', () => {
+  const m = mon(), name = $('saveName').value.trim() || labelOf[S.id];
+  const r = clean({ name, id: S.id, level: m.level, nature: m.nature, ability: m.ability, abOn: S.abOn, item: $('item').value, itOn: $('itOn').checked, iv: S.iv, ev: S.ev, stage: S.stage });
+  const i = saves.findIndex(x => x.name === r.name);
+  if(i >= 0 && !confirm(`"${r.name}" kaydının üzerine yazılsın mı?`)) return;
+  if(i >= 0) saves[i] = r; else saves.unshift(r);
+  if(persist()) say(`Kaydedildi: ${r.name}`);
+  drawSaves();
+});
+function load(r){
+  pick(r.id);   // listeler eşzamanlı dolar (yalnız sprite bekler)
+  $('level').value = r.level; $('nature').value = r.nature;
+  if([...$('ability').options].some(o => o.value === r.ability)) $('ability').value = r.ability;
+  $('item').value = r.item; $('itOn').checked = r.itOn; S.abOn = r.abOn;
+  Object.assign(S.iv, r.iv); Object.assign(S.ev, r.ev); S.stage = { ...r.stage };
+  document.querySelectorAll('input[data-t]').forEach(i => { i.value = S[i.dataset.t][i.dataset.k]; });
+  $('saveName').value = r.name; say(`Açıldı: ${r.name}`); update();
+}
+$('saves').addEventListener('click', e => {
+  const d = e.target.closest('button')?.dataset; if(!d) return;
+  if(d.load) load(saves[d.load]);
+  else if(confirm(`"${saves[d.del].name}" kaydı silinsin mi?`)){ saves.splice(d.del, 1); persist(); drawSaves(); }
+});
+$('export').addEventListener('click', () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify({ format: 'ivcalc-calc', saves }, null, 1)], { type: 'application/json' }));
+  a.download = `stat-hesaplayici-yedek-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+$('import').addEventListener('click', () => $('importFile').click());
+$('importFile').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = ''; if(!f) return;
+  let list;
+  try{ const j = JSON.parse(await f.text()); if(j.format !== 'ivcalc-calc') throw 0; list = j.saves.map(clean).filter(Boolean); }
+  catch(err){ return say('Dosya bu hesaplayıcının yedeği değil.'); }
+  let n = 0;   // mevcut kayıtlar silinmez: aynısı atlanır, adı çakışan numaralanır
+  for(const r of list){
+    if(saves.some(x => JSON.stringify(x) === JSON.stringify(r))) continue;
+    const base = r.name; for(let i = 2; saves.some(x => x.name === r.name); i++) r.name = `${base} (${i})`;
+    saves.push(r); n++;
+  }
+  if(persist()) say(`${n} kayıt eklendi, ${list.length - n} tanesi zaten vardı.`);
+  drawSaves();
+});
+
 pick(1);
+drawSaves();
