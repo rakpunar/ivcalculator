@@ -8,7 +8,7 @@ import { confirmBox } from './dialog.js';
 import { mons, on, setView, bulkView, stageAvailable, megaAvailable, setSel, selectAll, refreshView, setEv, resetEvs, evTotal, evsChanged, EV_MAX, EV_TOTAL, relUids, protUids, evPlans } from './state.js';
 import { game } from './game.js';
 import { compileSearch } from './search.js';
-import { ITEMS, ABILITIES, itemOptions, ownAb, abActive, modText } from './mods.js';
+import { ITEMS, ABILITIES, itemOptions, ownAb, abActive, modText, stageOf } from './mods.js';
 
 const $  = sel => document.querySelector(sel);
 const grid = $('#grid');
@@ -319,7 +319,7 @@ const buffBtns = (b, n) => [[-6,'−6'],[-2,'−2'],[-1,'−1'],[1,'+1'],[2,'+2'
   + `<button class="bf rst" data-b="${b}" data-d="0" title="Reset"${n ? '' : ' disabled'}>↺</button>`;
 
 function statVal(m, k){
-  const n = m.buff?.[k] || 0, v = m.calc[k];
+  const n = stageOf(m, k, m.buff?.[k], m.calc), v = m.calc[k];
   return n ? `<b class="${n>0?'buffed':'debuffed'}">${Math.floor(v * buffMult(n))}</b> <small title="Base value">(${v}, ${n>0?'+':''}${n})</small>` : v;
 }
 

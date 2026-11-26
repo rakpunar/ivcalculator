@@ -4,7 +4,7 @@ import { KEYS, STAT_ORDER, STAT_COLORS, NATURES } from './data.js';
 import { natureInfo } from './api.js';
 import { calcMon } from './stats.js';
 import { spriteList, PLACEHOLDER, cropSprite } from './sprites.js';
-import { ITEMS, ABILITIES, itemOptions, ownAb, abActive, modText } from './mods.js';
+import { ITEMS, ABILITIES, itemOptions, ownAb, abActive, modText, stageOf } from './mods.js';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
@@ -47,16 +47,16 @@ async function update(){
   const ab = ownAb(m), active = !!abActive(m), forced = active && !S.abOn;
   $('abOnL').hidden = !ab;
   $('abOn').checked = active; $('abOn').disabled = forced;
-  $('abTxt').textContent = ab ? `Ability bonusunu uygula: ${modText(ABILITIES, ab)}${forced ? ' (orb ile aktif)' : ''}` : '';
+  $('abTxt').textContent = ab ? `Ability bonusunu uygula: ${modText(ABILITIES, ab)}${forced ? ' (eşya ile aktif)' : ''}` : '';
   const desc = G.abilityDesc(m.ability);
   $('abDesc').textContent = (desc?.accurate || desc?.desc || '') + (ab ? '' : ' (Stat hesabına etkisi yok.)');
   const it = $('item').value, st = ITEMS[it]?.st;
   $('itOnL').hidden = !it;
-  $('itTxt').textContent = it ? `Eşya bonusunu uygula: ${st === 'brn' ? 'burn (Atk ×0.5, Guts hariç)' : st === 'tox' ? 'toxic durumu' : modText(ITEMS, it)}` : '';
+  $('itTxt').textContent = it ? `Eşya bonusunu uygula: ${st === 'brn' ? 'burn (Atk ×0.5, Guts hariç)' : st === 'tox' ? 'toxic durumu' : ITEMS[it].booster ? 'Protosynthesis / Quark Drive etkinleşir' : modText(ITEMS, it)}` : '';
   for(const k of KEYS){
     $('base-' + k).textContent = m.base.stats[k];
     $('nat-' + k).innerHTML = short[ni.inc] === k ? '<span class="up">▲</span>' : short[ni.dec] === k ? '<span class="down">▼</span>' : '';
-    const n = S.stage[k] || 0, v = Math.floor(out[k] * (n >= 0 ? (2 + n) / 2 : 2 / (2 - n)));
+    const n = stageOf(m, k, S.stage[k], out), v = Math.floor(out[k] * (n >= 0 ? (2 + n) / 2 : 2 / (2 - n)));
     $('out-' + k).innerHTML = n ? `<span class="${n > 0 ? 'up' : 'down'}">${v}</span> <small>(${out[k]})</small>` : v;
     if(k !== 'HP') $('sg-' + k).textContent = n > 0 ? '+' + n : n;
   }
